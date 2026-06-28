@@ -1,0 +1,168 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+  .btn-stamped {
+    box-shadow: 4px 4px 0px var(--color-on-surface, #1c1b1b);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(0, 0);
+  }
+  .btn-stamped:hover {
+    box-shadow: 8px 8px 0px var(--color-on-surface, #1c1b1b);
+    transform: translate(-4px, -4px);
+  }
+  .btn-stamped:active {
+    box-shadow: 0px 0px 0px var(--color-on-surface, #1c1b1b);
+    transform: translate(2px, 2px);
+  }
+
+  .brutal-card {
+    border: 3px solid var(--color-on-surface, #1c1b1b);
+    box-shadow: 4px 4px 0px var(--color-on-surface, #1c1b1b);
+    background-color: var(--color-surface-container-lowest, #ffffff);
+  }
+  
+  .feature-card {
+    transition: all 0.3s ease;
+    box-shadow: 0px 0px 0px transparent;
+  }
+  .feature-card:hover {
+    box-shadow: 8px 8px 0px var(--color-on-surface, #1c1b1b);
+    transform: translateY(-4px) translateX(-4px);
+    z-index: 10;
+    position: relative;
+  }
+  
+  .marquee-container {
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-content {
+    display: flex;
+    animation: marquee 40s linear infinite;
+  }
+  .marquee-container:hover .marquee-content {
+    animation-play-state: paused;
+  }
+  
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    color: var(--color-on-surface, #1c1b1b);
+    opacity: 0.2;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    transition: transform 0.1s ease-out;
+  }
+  
+  /* Landing Page Animations */
+  .bg-grid {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(28, 27, 27, 0.15) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(28, 27, 27, 0.15) 1px, transparent 1px);
+  }
+
+  .bg-grid-white {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  }
+
+  .doodle-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawIn 2s ease-out forwards;
+  }
+  
+  .animate-float-1 { animation: float 6s ease-in-out infinite; }
+  .animate-float-2 { animation: float 7s ease-in-out infinite 1s; }
+  .animate-float-3 { animation: float 5s ease-in-out infinite 2s; }
+  
+  .reveal-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-up.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .stagger-group .stagger-item {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+  .stagger-group.is-visible .stagger-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .stagger-group.is-visible .stagger-item:nth-child(1) { transition-delay: 0.1s; }
+  .stagger-group.is-visible .stagger-item:nth-child(2) { transition-delay: 0.2s; }
+  .stagger-group.is-visible .stagger-item:nth-child(3) { transition-delay: 0.3s; }
+  .stagger-group.is-visible .stagger-item:nth-child(4) { transition-delay: 0.4s; }
+
+  .hero-spring {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+    animation: springUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .stagger-word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: springUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+
+  .nav-link {
+    position: relative;
+    text-decoration: none;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #1c1b1b;
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+
+@keyframes drawIn {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes springUp {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
