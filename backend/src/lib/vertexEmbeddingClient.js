@@ -5,14 +5,20 @@
 
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: process.env.GOOGLE_CLOUD_PROJECT,
-  location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
-});
+let aiInstance = null;
 
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'gemini-embedding-001';
-if (!EMBEDDING_MODEL) throw new Error('EMBEDDING_MODEL is required');
+function getAi() {
+  if (!aiInstance) {
+    aiInstance = new GoogleGenAI({
+      vertexai: true,
+      project: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb',
+      location: process.env.GOOGLE_CLOUD_LOCATION || 'asia-southeast1',
+    });
+  }
+  return aiInstance;
+}
+
+const getModel = () => process.env.EMBEDDING_MODEL || 'gemini-embedding-001';
 
 /**
  * Retrieve an embedding vector for a given text.
@@ -24,8 +30,8 @@ export async function getEmbedding(text) {
     throw new Error('Input text is required for embedding');
   }
 
-  const response = await ai.models.embedContent({
-    model: EMBEDDING_MODEL,
+  const response = await getAi().models.embedContent({
+    model: getModel(),
     contents: text,
     config: {
       taskType: 'RETRIEVAL_DOCUMENT',

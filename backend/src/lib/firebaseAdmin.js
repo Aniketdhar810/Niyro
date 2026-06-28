@@ -13,8 +13,14 @@ const __dirname = dirname(__filename);
 if (!admin.apps.length) {
   const serviceAccountPath = process.env.FIREBASE_ADMIN_CREDENTIALS;
   if (!serviceAccountPath) {
-    console.error('FIREBASE_ADMIN_CREDENTIALS environment variable is not set.');
-    // Don't exit — let individual callers handle the missing SDK gracefully.
+    console.log('FIREBASE_ADMIN_CREDENTIALS not set, using Application Default Credentials.');
+    try {
+      admin.initializeApp({
+        projectId: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb'
+      });
+    } catch (e) {
+      console.error('Failed to initialize Firebase Admin with ADC:', e);
+    }
   } else {
     try {
       const resolvedPath = resolve(__dirname, '..', serviceAccountPath);

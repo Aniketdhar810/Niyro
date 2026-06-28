@@ -24,8 +24,8 @@ export const validateEnv = () => {
 
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length) {
-    console.error('Missing required environment variables:', missing.join(', '));
-    process.exit(1);
+    console.error('🚨 WARNING: Missing required environment variables:', missing.join(', '));
+    console.error('The server will start, but API calls will fail until these are provided.');
   }
 
   // Warn about optional vars

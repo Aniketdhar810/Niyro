@@ -1,17 +1,22 @@
 // src/lib/geminiClient.js
 // Gemini client using @google/genai SDK with Application Default Credentials.
-// Model: gemini-3.5-flash (hardcoded per spec — older models are shut down).
 
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: process.env.GOOGLE_CLOUD_PROJECT,
-  location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
-});
+let aiInstance = null;
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-if (!MODEL) throw new Error('GEMINI_MODEL is required');
+function getAi() {
+  if (!aiInstance) {
+    aiInstance = new GoogleGenAI({
+      vertexai: true,
+      project: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb',
+      location: process.env.GOOGLE_CLOUD_LOCATION || 'asia-southeast1',
+    });
+  }
+  return aiInstance;
+}
+
+const getModel = () => process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
 /**
  * Generate a text response from Gemini.
@@ -19,8 +24,8 @@ if (!MODEL) throw new Error('GEMINI_MODEL is required');
  * @returns {Promise<string>} Generated text.
  */
 export async function generateGemini(prompt) {
-  const response = await ai.models.generateContent({
-    model: MODEL,
+  const response = await getAi().models.generateContent({
+    model: getModel(),
     contents: prompt,
   });
   return response.text ?? '';
@@ -38,8 +43,8 @@ export async function callGemini(prompt, options = {}) {
     config.responseMimeType = 'application/json';
   }
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
+  const response = await getAi().models.generateContent({
+    model: getModel(),
     contents: prompt,
     config,
   });
