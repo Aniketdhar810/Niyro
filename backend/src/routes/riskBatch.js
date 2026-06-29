@@ -4,7 +4,7 @@ import { runRiskBatch, runRiskBatchAll } from '../controllers/riskBatchControlle
 
 const router = express.Router();
 
-const schedulerAuth = (req, res, next) => {
+export const schedulerAuth = (req, res, next) => {
   const secret = process.env.CRON_SECRET;
   const header = req.headers['authorization'];
   if (secret && header === `Bearer ${secret}`) return next();

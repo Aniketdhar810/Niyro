@@ -25,6 +25,10 @@ export async function ingestMessage(uid, source, rawContent, sourceRef = null) {
 - dueAt (ISO-8601 datetime string or null)
 - estimatedMinutes (integer or null)
 
+IMPORTANT CONTEXT:
+Today's date and time is ${new Date().toISOString()}.
+When resolving relative dates like "this Friday", "tomorrow", or "next week", use this date as the baseline to compute the correct future ISO date.
+
 If this message does not describe an actionable task, return {"title": null}.
 
 Message: """${rawContent}"""`;

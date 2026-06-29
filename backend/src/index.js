@@ -8,7 +8,7 @@ import { validateEnv } from './lib/envValidator.js';
 import requestId from './middleware/requestId.js';
 import errorHandler from './middleware/errorHandler.js';
 import { authMiddleware } from './lib/authMiddleware.js';
-import { startDailyBriefingCron } from './cron/dailyBriefing.js';
+
 
 // Import Routers
 import tasksRouter from './routes/tasks.js';
@@ -20,12 +20,12 @@ import riskBatchRouter from './routes/riskBatch.js';
 import settingsRouter from './routes/settings.js';
 import chatRouter from './routes/chat.js';
 import activityFeedRouter from './routes/activityFeed.js';
+import cronRouter from './routes/cron.js';
 
 // Validate env BEFORE initializing
 validateEnv();
 
-// Start cron jobs
-startDailyBriefingCron();
+// Cron jobs are now handled via Cloud Scheduler calling /api/v1/cron
 
 const app = express();
 app.use(cors());
@@ -38,6 +38,7 @@ app.use(requestId);
 app.use('/api/v1/auth', authRouter); // /login, /callback
 app.use('/api/v1/ingest', ingestRouter); // Includes webhooks and manual ingest
 app.use('/api/v1/agents', riskBatchRouter); // /risk/run batch route (scheduler)
+app.use('/api/v1/cron', cronRouter); // Cloud Scheduler cron jobs
 
 // ---------------------------------------------------------
 // PROTECTED ROUTES (require Bearer token)

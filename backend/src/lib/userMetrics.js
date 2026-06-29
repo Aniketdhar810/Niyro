@@ -24,7 +24,7 @@ export async function updateMomentum(uid, completedOnTime) {
   // focusScore: proportion-based (simple heuristic — capped at 100)
   momentum.focusScore = Math.min(100, (momentum.streakCount || 0) * 7);
 
-  await userRef.update({ momentum });
+  await userRef.set({ momentum }, { merge: true });
   return momentum;
 }
 
@@ -52,6 +52,6 @@ export async function updateEstimationProfile(uid, actualMinutes, estimatedMinut
   profile.globalAdjustmentFactor = Math.round(newFactor * 1000) / 1000; // 3 decimal places
   profile.sampleCount = n + 1;
 
-  await userRef.update({ estimationProfile: profile });
+  await userRef.set({ estimationProfile: profile }, { merge: true });
   return profile;
 }

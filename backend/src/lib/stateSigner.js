@@ -8,8 +8,13 @@
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 
-const JWT_SECRET = process.env.ENCRYPTION_KEY;
-if (!JWT_SECRET) throw new Error('ENCRYPTION_KEY environment variable is strictly required for security.');
+function getSecret() {
+  const secret = process.env.ENCRYPTION_KEY;
+  if (!secret) {
+    throw new Error('ENCRYPTION_KEY environment variable is strictly required for security.');
+  }
+  return secret;
+}
 
 /**
  * Create a signed state token embedding the Firebase UID.
@@ -20,7 +25,7 @@ export function createSignedState(uid) {
   const nonce = randomUUID();
   const payload = { uid, nonce };
   // 5-minute expiry — short enough to prevent replay, long enough for the OAuth round-trip.
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '5m' });
+  return jwt.sign(payload, getSecret(), { expiresIn: '5m' });
 }
 
 /**
@@ -31,7 +36,7 @@ export function createSignedState(uid) {
  */
 export function verifySignedState(token) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getSecret());
     return decoded.uid;
   } catch (err) {
     throw new Error(`Invalid state token: ${err.message}`);

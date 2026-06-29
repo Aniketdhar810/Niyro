@@ -9,9 +9,11 @@ let aiInstance = null;
 
 function getAi() {
   if (!aiInstance) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT;
+    if (!project) throw new Error('GOOGLE_CLOUD_PROJECT environment variable is missing');
     aiInstance = new GoogleGenAI({
       vertexai: true,
-      project: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb',
+      project,
       location: process.env.GOOGLE_CLOUD_LOCATION || 'asia-southeast1',
     });
   }
