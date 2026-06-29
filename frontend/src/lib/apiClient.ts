@@ -64,48 +64,172 @@ export interface Recommendation {
   generatedAt: string;
 }
 
-export const api = {
+export interface MemoryPattern {
+  id: string;
+  observation: string;
+  actionableRule: string;
+  generatedAt: string;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  targetDate: string | null;
+  status: 'active' | 'completed' | 'abandoned';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Habit {
+  id: string;
+  title: string;
+  frequency: 'daily' | 'weekly';
+  streak: number;
+  lastCompletedDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  dueAt: string | null;
+  estimatedMinutes: number | null;
+  actualMinutes?: number;
+  source: string;
+  sourceRef?: string;
+  status: 'pending' | 'in_progress' | 'done';
+  riskLevel: 'on_track' | 'at_risk' | 'critical';
+  steps?: { id: string; title: string; done?: boolean; scheduledAt?: string }[];
+  goalId?: string;
+}
+
+class ApiClient {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return fetchApi<T>(`/api/v1${endpoint}`, options);
+  }
+
   // Tasks
-  createTask: (data: { title: string; description?: string; dueAt?: string; estimatedMinutes?: number }) => 
-    fetchApi<{ success: boolean; taskId: string }>('/api/v1/tasks', {
+  async createTask(data: { title: string; description?: string; dueAt?: string; estimatedMinutes?: number }) {
+    return this.request<{ success: boolean; taskId: string }>('/tasks', {
       method: 'POST',
       body: JSON.stringify(data)
-    }),
-  completeTask: (taskId: string) => fetchApi<{ success: boolean }>(`/api/v1/tasks/${taskId}/complete`, { method: 'POST' }),
+    });
+  }
+  async completeTask(taskId: string) {
+    return this.request<{ success: boolean }>(`/tasks/${taskId}/complete`, { method: 'POST' });
+  }
+  async updateTask(taskId: string, updates: Partial<Task>) {
+    return this.request<{ success: boolean }>(`/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates)
+    });
+  }
 
   // Auth
-  startGoogleOAuth: () => fetchApi<{ authUrl: string }>('/api/v1/auth/login'),
+  async startGoogleOAuth() {
+    return this.request<{ authUrl: string }>('/auth/login');
+  }
 
   // Settings
-  updateSettings: (updates: any) => fetchApi<{ success: boolean; settings: any }>('/api/v1/settings', {
-    method: 'PATCH',
-    body: JSON.stringify(updates)
-  }),
+  async updateSettings(updates: any) {
+    return this.request<{ success: boolean; settings: any }>('/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(updates)
+    });
+  }
 
   // Agents
-  planTask: (taskId: string) => fetchApi<{ success: boolean }>(`/api/v1/agents/plan/${taskId}`, { method: 'POST' }),
-  scheduleTask: (taskId: string) => fetchApi<{ success: boolean }>(`/api/v1/agents/schedule`, { 
-    method: 'POST',
-    body: JSON.stringify({ taskId })
-  }),
-  lastMinuteTask: (taskId: string) => fetchApi<{ success: boolean }>(`/api/v1/agents/last-minute/${taskId}`, { method: 'POST' }),
+  async planTask(taskId: string) {
+    return this.request<{ success: boolean }>(`/agents/plan/${taskId}`, { method: 'POST' });
+  }
+  async scheduleTask(taskId: string) {
+    return this.request<{ success: boolean }>(`/agents/schedule`, { 
+      method: 'POST',
+      body: JSON.stringify({ taskId })
+    });
+  }
+  async lastMinuteTask(taskId: string) {
+    return this.request<{ success: boolean }>(`/agents/last-minute/${taskId}`, { method: 'POST' });
+  }
   
   // Approvals
-  approveAction: (approvalId: string) => fetchApi<{ success: boolean }>(`/api/v1/approvals/${approvalId}/approve`, { method: 'POST' }),
-  rejectAction: (approvalId: string) => fetchApi<{ success: boolean }>(`/api/v1/approvals/${approvalId}/reject`, { method: 'POST' }),
+  async approveAction(approvalId: string) {
+    return this.request<{ success: boolean }>(`/approvals/${approvalId}/approve`, { method: 'POST' });
+  }
+  async rejectAction(approvalId: string) {
+    return this.request<{ success: boolean }>(`/approvals/${approvalId}/reject`, { method: 'POST' });
+  }
 
   // Activity Feed
-  undoActivity: (activityId: string) => fetchApi<{ success: boolean }>(`/api/v1/activity-feed/${activityId}/undo`, { method: 'POST' }),
+  async undoActivity(activityId: string) {
+    return this.request<{ success: boolean }>(`/activity-feed/${activityId}/undo`, { method: 'POST' });
+  }
 
   // Chat
-  sendChatMessage: (message: string) => fetchApi<{ reply: string; citedTaskIds: string[] }>('/api/v1/chat', {
-    method: 'POST',
-    body: JSON.stringify({ message })
-  }),
+  async sendChatMessage(message: string) {
+    return this.request<{ reply: string; citedTaskIds: string[] }>('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message })
+    });
+  }
 
-  // Recommendations
-  getRecommendations: () => 
-    fetchApi<{ recommendations: Recommendation[]; generatedAt: string | null; nextRefreshAvailable: string }>('/api/v1/recommendations'),
-  refreshRecommendations: () =>
-    fetchApi<{ recommendations: Recommendation[] }>('/api/v1/recommendations/refresh', { method: 'POST' }),
-};
+  // Recommendations & Memory
+  async getRecommendations() {
+    return this.request<{ recommendations: Recommendation[]; memoryPatterns: MemoryPattern[]; generatedAt: string | null; nextRefreshAvailable: string }>('/recommendations');
+  }
+  async refreshRecommendations() {
+    return this.request<{ success: boolean; recommendations: Recommendation[]; memoryPatterns: MemoryPattern[] }>('/recommendations/refresh', { method: 'POST' });
+  }
+  async createRecommendation() {
+    return this.request<{ success: boolean; recommendationId: string }>('/recommendations', { method: 'POST' });
+  }
+
+  // Goals
+  async getGoals() {
+    return this.request<{ success: boolean; goals: Goal[] }>('/goals');
+  }
+  async createGoal(data: { title: string; description?: string; targetDate?: string }) {
+    return this.request<{ success: boolean; goalId: string }>('/goals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  async updateGoal(goalId: string, data: Partial<Goal>) {
+    return this.request<{ success: boolean }>(`/goals/${goalId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+  async completeGoal(goalId: string) {
+    return this.request<{ success: boolean; goalId: string; status: string }>(`/goals/${goalId}/complete`, {
+      method: 'POST',
+    });
+  }
+  async deleteGoal(goalId: string) {
+    return this.request<{ success: boolean }>(`/goals/${goalId}`, { method: 'DELETE' });
+  }
+
+  // Habits
+  async getHabits() {
+    return this.request<{ success: boolean; habits: Habit[] }>('/habits');
+  }
+  async createHabit(data: { title: string; frequency?: 'daily' | 'weekly' }) {
+    return this.request<{ success: boolean; habitId: string }>('/habits', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  async completeHabit(habitId: string) {
+    return this.request<{ success: boolean; habitId: string; newStreak: number }>(`/habits/${habitId}/complete`, {
+      method: 'POST',
+    });
+  }
+  async deleteHabit(habitId: string) {
+    return this.request<{ success: boolean }>(`/habits/${habitId}`, { method: 'DELETE' });
+  }
+}
+
+export const api = new ApiClient();

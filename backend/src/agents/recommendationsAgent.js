@@ -25,6 +25,10 @@ export async function collectUserStats(uid) {
       .where('timestamp', '>=', thirtyDaysAgo)
       .get();
       
+    // 4. Fetch Goals and Habits
+    const goalsSnap = await db.collection('users').doc(uid).collection('goals').get();
+    const habitsSnap = await db.collection('users').doc(uid).collection('habits').get();
+      
     // Momentum & Estimation from user doc
     const momentum = userData.momentum || {};
     const estimationProfile = userData.estimationProfile || {};
@@ -57,10 +61,27 @@ export async function collectUserStats(uid) {
       averageStepsPerTask: 0,
       
       mostActiveAgentHour: null,
-      daysSinceLastCompletion
+      daysSinceLastCompletion,
+      
+      activeGoals: 0,
+      completedGoals: 0,
+      activeHabits: 0,
+      maxHabitStreak: 0,
     };
 
     let totalSteps = 0;
+
+    goalsSnap.forEach(doc => {
+      if (doc.data().status === 'completed') stats.completedGoals++;
+      else stats.activeGoals++;
+    });
+
+    habitsSnap.forEach(doc => {
+      stats.activeHabits++;
+      if (doc.data().streak > stats.maxHabitStreak) {
+        stats.maxHabitStreak = doc.data().streak;
+      }
+    });
 
     tasksSnap.forEach(doc => {
       const t = doc.data();
@@ -139,7 +160,8 @@ export async function collectUserStats(uid) {
       tasksGoneCritical: 0, tasksGoneAtRisk: 0, tasksCompletedOnTime: 0, tasksCompletedLate: 0, lastMinuteTriggers: 0,
       sourceBreakdown: { gmail: 0, telegram: 0, slack: 0, manual: 0 },
       tasksWithSteps: 0, tasksWithoutSteps: 0, averageStepsPerTask: 0,
-      mostActiveAgentHour: null, daysSinceLastCompletion: null
+      mostActiveAgentHour: null, daysSinceLastCompletion: null,
+      activeGoals: 0, completedGoals: 0, activeHabits: 0, maxHabitStreak: 0
     };
   }
 }
@@ -190,18 +212,22 @@ Tasks WITH planning (steps): ${stats.tasksWithSteps}
 Tasks WITHOUT planning: ${stats.tasksWithoutSteps}
 Most productive hour: ${stats.mostActiveAgentHour !== null ? stats.mostActiveAgentHour + ':00' : 'unknown'}
 Task sources: Gmail=${stats.sourceBreakdown.gmail}, Telegram=${stats.sourceBreakdown.telegram}, Manual=${stats.sourceBreakdown.manual}
+Active Goals: ${stats.activeGoals}
+Completed Goals: ${stats.completedGoals}
+Active Habits: ${stats.activeHabits}
+Max Habit Streak: ${stats.maxHabitStreak} days
 
 Generate exactly 3-5 recommendations. Each must be specific to this user's numbers. Prioritize the most impactful issues first.
 Return ONLY a JSON array with this exact structure (no markdown, no preamble):
 [
   {
-    "type": "estimation" | "planning" | "streak" | "risk" | "channel" | "focus" | "timing",
+    "type": "estimation" | "planning" | "streak" | "risk" | "channel" | "focus" | "timing" | "habit" | "goal",
     "priority": "high" | "medium" | "low",
     "title": "Short title under 8 words",
     "body": "2-3 sentences. MUST mention specific numbers from the data. Be direct and actionable.",
     "icon": "single relevant emoji",
     "actionLabel": "Short CTA text (e.g., 'Plan a task now') or null if no action",
-    "actionRoute": "/tasks" | "/focus" | "/assistant" | "/settings" | null
+    "actionRoute": "/tasks" | "/focus" | "/assistant" | "/settings" | "/dashboard" | null
   }
 ]
 
@@ -211,6 +237,7 @@ If lastMinuteTriggers > 2: include a risk/planning recommendation
 If tasksWithoutSteps > tasksWithSteps && totalTasksLast30Days > 5: include a planning recommendation
 If daysSinceLastCompletion > 3: include a streak/momentum recommendation
 If completionRate < 60: include a focus/workload recommendation
+If activeGoals > 0 && maxHabitStreak < 3: include a goal/habit alignment recommendation
 actionRoute must be one of the exact strings listed above or null
 Never say "consider" or "try to" — be direct: "Add 40% buffer time to your estimates"`;
 

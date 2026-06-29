@@ -10,9 +10,11 @@ This report documents all files, functions, and exports under `backend/src`.
   - [agents/executorAgent.js](#agentsexecutorAgentjs)
   - [agents/ingestion.js](#agentsingestionjs)
   - [agents/lastMinuteAgent.js](#agentslastMinuteAgentjs)
+  - [agents/memoryAgent.js](#agentsmemoryAgentjs)
   - [agents/negotiationAgent.js](#agentsnegotiationAgentjs)
   - [agents/plannerAgent.js](#agentsplannerAgentjs)
   - [agents/prioritizerAgent.js](#agentsprioritizerAgentjs)
+  - [agents/recommendationsAgent.js](#agentsrecommendationsAgentjs)
   - [agents/riskAgent.js](#agentsriskAgentjs)
   - [agents/schedulerAgent.js](#agentsschedulerAgentjs)
 - [controllers](#controllers)
@@ -21,7 +23,10 @@ This report documents all files, functions, and exports under `backend/src`.
   - [controllers/approvalsController.js](#controllersapprovalsControllerjs)
   - [controllers/authController.js](#controllersauthControllerjs)
   - [controllers/chatController.js](#controllerschatControllerjs)
+  - [controllers/goalsController.js](#controllersgoalsControllerjs)
+  - [controllers/habitsController.js](#controllershabitsControllerjs)
   - [controllers/ingestionController.js](#controllersingestionControllerjs)
+  - [controllers/recommendationsController.js](#controllersrecommendationsControllerjs)
   - [controllers/riskBatchController.js](#controllersriskBatchControllerjs)
   - [controllers/settingsController.js](#controllerssettingsControllerjs)
   - [controllers/taskCompletionController.js](#controllerstaskCompletionControllerjs)
@@ -42,6 +47,7 @@ This report documents all files, functions, and exports under `backend/src`.
   - [lib/firestoreClient.js](#libfirestoreClientjs)
   - [lib/geminiClient.js](#libgeminiClientjs)
   - [lib/gmailClient.js](#libgmailClientjs)
+  - [lib/gmailIngestionService.js](#libgmailIngestionServicejs)
   - [lib/logger.js](#libloggerjs)
   - [lib/oauthService.js](#liboauthServicejs)
   - [lib/rateLimiter.js](#librateLimiterjs)
@@ -63,7 +69,11 @@ This report documents all files, functions, and exports under `backend/src`.
   - [routes/approvals.js](#routesapprovalsjs)
   - [routes/auth.js](#routesauthjs)
   - [routes/chat.js](#routeschatjs)
+  - [routes/cron.js](#routescronjs)
+  - [routes/goals.js](#routesgoalsjs)
+  - [routes/habits.js](#routeshabitsjs)
   - [routes/ingest.js](#routesingestjs)
+  - [routes/recommendations.js](#routesrecommendationsjs)
   - [routes/riskBatch.js](#routesriskBatchjs)
   - [routes/settings.js](#routessettingsjs)
   - [routes/tasks.js](#routestasksjs)
@@ -169,6 +179,35 @@ This report documents all files, functions, and exports under `backend/src`.
 23:   const taskRef = db.collection('users').doc(uid).collection('tasks').doc(taskId);
 ```
 
+### agents/memoryAgent.js
+<a id="agentsmemoryAgentjs"></a>
+
+**Path:** `backend/src/agents/memoryAgent.js`
+
+**Description:** Component in agents module.
+
+#### Function: `extractPatterns(uid)`
+- **Purpose:** Handles logic for `extractPatterns`.
+- **Snippet:**
+```javascript
+10: export async function extractPatterns(uid) {
+11:   try {
+12:     const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+13:     
+14:     // Fetch completed tasks
+```
+
+#### Function: `saveMemoryPatterns(uid, patterns)`
+- **Purpose:** Handles logic for `saveMemoryPatterns`.
+- **Snippet:**
+```javascript
+124: async function saveMemoryPatterns(uid, patterns) {
+125:   const collectionRef = db.collection('users').doc(uid).collection('aiMemory');
+126:   
+127:   // Wipe old patterns
+128:   const oldSnap = await collectionRef.get();
+```
+
 ### agents/negotiationAgent.js
 <a id="agentsnegotiationAgentjs"></a>
 
@@ -234,6 +273,46 @@ This report documents all files, functions, and exports under `backend/src`.
 20:   const tasksSnap = await db
 ```
 
+### agents/recommendationsAgent.js
+<a id="agentsrecommendationsAgentjs"></a>
+
+**Path:** `backend/src/agents/recommendationsAgent.js`
+
+**Description:** Component in agents module.
+
+#### Function: `collectUserStats(uid)`
+- **Purpose:** Handles logic for `collectUserStats`.
+- **Snippet:**
+```javascript
+10: export async function collectUserStats(uid) {
+11:   try {
+12:     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+13:     
+14:     // 1. Fetch user doc
+```
+
+#### Function: `generateRecommendations(uid)`
+- **Purpose:** Handles logic for `generateRecommendations`.
+- **Snippet:**
+```javascript
+172: export async function generateRecommendations(uid) {
+173:   const stats = await collectUserStats(uid);
+174:   const now = new Date().toISOString();
+175:   
+176:   if (stats.estimationSampleCount < 3 && stats.totalTasksLast30Days < 5) {
+```
+
+#### Function: `saveRecommendations(uid, recs, stats, generatedAt)`
+- **Purpose:** Handles logic for `saveRecommendations`.
+- **Snippet:**
+```javascript
+297: async function saveRecommendations(uid, recs, stats, generatedAt) {
+298:   const collectionRef = db.collection('users').doc(uid).collection('recommendations');
+299:   
+300:   // Delete old recommendations (excluding _meta)
+301:   const oldSnap = await collectionRef.get();
+```
+
 ### agents/riskAgent.js
 <a id="agentsriskAgentjs"></a>
 
@@ -274,11 +353,11 @@ This report documents all files, functions, and exports under `backend/src`.
 - **Purpose:** Handles logic for `scheduleTask`.
 - **Snippet:**
 ```javascript
-15: export async function scheduleTask(uid, taskId) {
-16:   if (!uid) throw new Error('uid is required');
-17:   if (!taskId) throw new Error('taskId is required');
-18: 
-19:   const taskRef = db.collection('users').doc(uid).collection('tasks').doc(taskId);
+16: export async function scheduleTask(uid, taskId) {
+17:   if (!uid) throw new Error('uid is required');
+18:   if (!taskId) throw new Error('taskId is required');
+19: 
+20:   const taskRef = db.collection('users').doc(uid).collection('tasks').doc(taskId);
 ```
 
 ## controllers
@@ -461,6 +540,130 @@ This report documents all files, functions, and exports under `backend/src`.
 10:     
 ```
 
+### controllers/goalsController.js
+<a id="controllersgoalsControllerjs"></a>
+
+**Path:** `backend/src/controllers/goalsController.js`
+
+**Description:** Component in controllers module.
+
+#### Function: `getGoals(req, res)`
+- **Purpose:** Handles logic for `getGoals`.
+- **Snippet:**
+```javascript
+6: export async function getGoals(req, res) {
+7:   const uid = req.user.uid;
+8:   const snap = await db.collection('users').doc(uid).collection('goals')
+9:     .orderBy('createdAt', 'desc').get();
+10:   
+```
+
+#### Function: `createGoal(req, res)`
+- **Purpose:** Handles logic for `createGoal`.
+- **Snippet:**
+```javascript
+15: export async function createGoal(req, res) {
+16:   const uid = req.user.uid;
+17:   const { title, description, targetDate } = req.body;
+18:   const now = new Date().toISOString();
+19: 
+```
+
+#### Function: `updateGoal(req, res)`
+- **Purpose:** Handles logic for `updateGoal`.
+- **Snippet:**
+```javascript
+34: export async function updateGoal(req, res) {
+35:   const uid = req.user.uid;
+36:   const { goalId } = req.params;
+37:   const goalRef = db.collection('users').doc(uid).collection('goals').doc(goalId);
+38:   const snap = await goalRef.get();
+```
+
+#### Function: `deleteGoal(req, res)`
+- **Purpose:** Handles logic for `deleteGoal`.
+- **Snippet:**
+```javascript
+45: export async function deleteGoal(req, res) {
+46:   const uid = req.user.uid;
+47:   const { goalId } = req.params;
+48:   const goalRef = db.collection('users').doc(uid).collection('goals').doc(goalId);
+49:   const snap = await goalRef.get();
+```
+
+#### Function: `completeGoal(req, res)`
+- **Purpose:** Handles logic for `completeGoal`.
+- **Snippet:**
+```javascript
+57: export async function completeGoal(req, res) {
+58:   const uid = req.user.uid;
+59:   const { goalId } = req.params;
+60:   const goalRef = db.collection('users').doc(uid).collection('goals').doc(goalId);
+61:   const snap = await goalRef.get();
+```
+
+### controllers/habitsController.js
+<a id="controllershabitsControllerjs"></a>
+
+**Path:** `backend/src/controllers/habitsController.js`
+
+**Description:** Component in controllers module.
+
+#### Function: `getHabits(req, res)`
+- **Purpose:** Handles logic for `getHabits`.
+- **Snippet:**
+```javascript
+7: export async function getHabits(req, res) {
+8:   const uid = req.user.uid;
+9:   const snap = await db.collection('users').doc(uid).collection('habits')
+10:     .orderBy('createdAt', 'desc').get();
+11:   
+```
+
+#### Function: `createHabit(req, res)`
+- **Purpose:** Handles logic for `createHabit`.
+- **Snippet:**
+```javascript
+16: export async function createHabit(req, res) {
+17:   const uid = req.user.uid;
+18:   const { title, frequency } = req.body;
+19:   const now = new Date().toISOString();
+20: 
+```
+
+#### Function: `updateHabit(req, res)`
+- **Purpose:** Handles logic for `updateHabit`.
+- **Snippet:**
+```javascript
+35: export async function updateHabit(req, res) {
+36:   const uid = req.user.uid;
+37:   const { habitId } = req.params;
+38:   const habitRef = db.collection('users').doc(uid).collection('habits').doc(habitId);
+39:   const snap = await habitRef.get();
+```
+
+#### Function: `deleteHabit(req, res)`
+- **Purpose:** Handles logic for `deleteHabit`.
+- **Snippet:**
+```javascript
+46: export async function deleteHabit(req, res) {
+47:   const uid = req.user.uid;
+48:   const { habitId } = req.params;
+49:   const habitRef = db.collection('users').doc(uid).collection('habits').doc(habitId);
+50:   const snap = await habitRef.get();
+```
+
+#### Function: `completeHabit(req, res)`
+- **Purpose:** Handles logic for `completeHabit`.
+- **Snippet:**
+```javascript
+58: export async function completeHabit(req, res) {
+59:   const uid = req.user.uid;
+60:   const { habitId } = req.params;
+61:   const habitRef = db.collection('users').doc(uid).collection('habits').doc(habitId);
+62:   const snap = await habitRef.get();
+```
+
 ### controllers/ingestionController.js
 <a id="controllersingestionControllerjs"></a>
 
@@ -477,6 +680,35 @@ This report documents all files, functions, and exports under `backend/src`.
 9:     const uid = req.user.uid;
 10:     const { source = 'manual', rawContent, sourceRef } = req.body;
 11: 
+```
+
+### controllers/recommendationsController.js
+<a id="controllersrecommendationsControllerjs"></a>
+
+**Path:** `backend/src/controllers/recommendationsController.js`
+
+**Description:** Component in controllers module.
+
+#### Function: `getRecommendations(req, res)`
+- **Purpose:** Handles logic for `getRecommendations`.
+- **Snippet:**
+```javascript
+6: export async function getRecommendations(req, res) {
+7:   try {
+8:     const uid = req.user.uid;
+9:     const now = new Date().toISOString();
+10:     
+```
+
+#### Function: `refreshRecommendations(req, res)`
+- **Purpose:** Handles logic for `refreshRecommendations`.
+- **Snippet:**
+```javascript
+52: export async function refreshRecommendations(req, res) {
+53:   try {
+54:     const uid = req.user.uid;
+55:     
+56:     // Check cooldown
 ```
 
 ### controllers/riskBatchController.js
@@ -614,26 +846,26 @@ This report documents all files, functions, and exports under `backend/src`.
 
 **Description:** Component in cron module.
 
-#### Function: `startDailyBriefingCron()`
-- **Purpose:** Handles logic for `startDailyBriefingCron`.
+#### Function: `runDailyBriefing()`
+- **Purpose:** Handles logic for `runDailyBriefing`.
 - **Snippet:**
 ```javascript
-7: export function startDailyBriefingCron() {
-8:   // Run at 08:00 AM every day
-9:   // You can adjust the timezone if needed, or iterate per user timezone
-10:   cron.schedule('0 8 * * *', async () => {
-11:     logger.info('Running Daily Briefing Job...');
+6: export async function runDailyBriefing() {
+7:   logger.info('Running Daily Briefing Job...');
+8:   try {
+9:     const usersSnap = await db.collection('users').get();
+10:     
 ```
 
 #### Function: `sendTelegramMessage(chatId, text)`
 - **Purpose:** Handles logic for `sendTelegramMessage`.
 - **Snippet:**
 ```javascript
-79: async function sendTelegramMessage(chatId, text) {
-80:   if (!process.env.TELEGRAM_BOT_TOKEN) return;
-81:   try {
-82:     await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-83:       method: 'POST',
+72: async function sendTelegramMessage(chatId, text) {
+73:   if (!process.env.TELEGRAM_BOT_TOKEN) return;
+74:   try {
+75:     await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+76:       method: 'POST',
 ```
 
 ## errors
@@ -924,41 +1156,41 @@ This report documents all files, functions, and exports under `backend/src`.
 ```javascript
 8: function getAi() {
 9:   if (!aiInstance) {
-10:     aiInstance = new GoogleGenAI({
-11:       vertexai: true,
-12:       project: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb',
+10:     const project = process.env.GOOGLE_CLOUD_PROJECT;
+11:     if (!project) throw new Error('GOOGLE_CLOUD_PROJECT environment variable is missing');
+12:     aiInstance = new GoogleGenAI({
 ```
 
 #### Function: `generateGemini(prompt)`
 - **Purpose:** Handles logic for `generateGemini`.
 - **Snippet:**
 ```javascript
-26: export async function generateGemini(prompt) {
-27:   const response = await getAi().models.generateContent({
-28:     model: getModel(),
-29:     contents: prompt,
-30:   });
+28: export async function generateGemini(prompt) {
+29:   const response = await getAi().models.generateContent({
+30:     model: getModel(),
+31:     contents: prompt,
+32:   });
 ```
 
 #### Function: `callGemini(prompt, options = {})`
 - **Purpose:** Handles logic for `callGemini`.
 - **Snippet:**
 ```javascript
-40: export async function callGemini(prompt, options = {}) {
-41:   const config = {};
-42:   if (options.structured) {
-43:     config.responseMimeType = 'application/json';
-44:   }
+42: export async function callGemini(prompt, options = {}) {
+43:   const config = {};
+44:   if (options.structured) {
+45:     config.responseMimeType = 'application/json';
+46:   }
 ```
 
 #### Arrow Function: `getModel`
 - **Purpose:** Exported or module-level variable `getModel`.
 - **Snippet:**
 ```javascript
-19: const getModel = () => process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-20: 
-21: /**
-22:  * Generate a text response from Gemini.
+21: const getModel = () => process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+22: 
+23: /**
+24:  * Generate a text response from Gemini.
 ```
 
 ### lib/gmailClient.js
@@ -1012,6 +1244,57 @@ This report documents all files, functions, and exports under `backend/src`.
 71:     requestBody: {
 ```
 
+#### Function: `ensureNiyroLabel(uid)`
+- **Purpose:** Handles logic for `ensureNiyroLabel`.
+- **Snippet:**
+```javascript
+81: export async function ensureNiyroLabel(uid) {
+82:   const gmail = await getGmailClient(uid);
+83:   const res = await gmail.users.labels.list({ userId: 'me' });
+84:   const labels = res.data.labels || [];
+85:   let niyroLabel = labels.find(l => l.name === 'Niyro');
+```
+
+#### Function: `getMessagesByLabel(uid, labelId)`
+- **Purpose:** Handles logic for `getMessagesByLabel`.
+- **Snippet:**
+```javascript
+104: export async function getMessagesByLabel(uid, labelId) {
+105:   const gmail = await getGmailClient(uid);
+106:   const res = await gmail.users.messages.list({
+107:     userId: 'me',
+108:     labelIds: [labelId],
+```
+
+#### Function: `removeLabelFromMessage(uid, messageId, labelId)`
+- **Purpose:** Handles logic for `removeLabelFromMessage`.
+- **Snippet:**
+```javascript
+117: export async function removeLabelFromMessage(uid, messageId, labelId) {
+118:   const gmail = await getGmailClient(uid);
+119:   await gmail.users.messages.modify({
+120:     userId: 'me',
+121:     id: messageId,
+```
+
+### lib/gmailIngestionService.js
+<a id="libgmailIngestionServicejs"></a>
+
+**Path:** `backend/src/lib/gmailIngestionService.js`
+
+**Description:** Component in lib module.
+
+#### Function: `processGmailMessage(uid, messageId)`
+- **Purpose:** Handles logic for `processGmailMessage`.
+- **Snippet:**
+```javascript
+12: export async function processGmailMessage(uid, messageId) {
+13:   try {
+14:     const rawContent = await getMessageBody(uid, messageId);
+15:     if (!rawContent || rawContent.trim() === '') {
+16:       logger.warn(`Gmail message ${messageId} is empty.`);
+```
+
 ### lib/logger.js
 <a id="libloggerjs"></a>
 
@@ -1043,7 +1326,7 @@ This report documents all files, functions, and exports under `backend/src`.
 19: export function generateAuthUrl(state) {
 20:   const scopes = [
 21:     'https://www.googleapis.com/auth/calendar',
-22:     'https://www.googleapis.com/auth/gmail.readonly',
+22:     'https://www.googleapis.com/auth/gmail.modify',
 23:     'https://www.googleapis.com/auth/gmail.send',
 ```
 
@@ -1156,68 +1439,128 @@ This report documents all files, functions, and exports under `backend/src`.
 - **Purpose:** Exported or module-level variable `taskUpdateSchema`.
 - **Snippet:**
 ```javascript
-17: export const taskUpdateSchema = z.object({
-18:   title: z.string().optional(),
-19:   description: z.string().optional(),
-20:   dueAt: z.string().optional(),
+18: export const taskUpdateSchema = z.object({
+19:   title: z.string().optional(),
+20:   description: z.string().optional(),
+21:   dueAt: z.string().optional(),
 ```
 
 #### Constant: `taskIdSchema`
 - **Purpose:** Exported or module-level variable `taskIdSchema`.
 - **Snippet:**
 ```javascript
-25: export const taskIdSchema = z.object({
-26:   taskId: z.string().min(1),
-27: });
-28: 
+27: export const taskIdSchema = z.object({
+28:   taskId: z.string().min(1),
+29: });
+30: 
+```
+
+#### Constant: `goalCreateSchema`
+- **Purpose:** Exported or module-level variable `goalCreateSchema`.
+- **Snippet:**
+```javascript
+32: export const goalCreateSchema = z.object({
+33:   title: z.string().min(1),
+34:   description: z.string().optional().default(''),
+35:   targetDate: z.string().optional(),
+```
+
+#### Constant: `goalUpdateSchema`
+- **Purpose:** Exported or module-level variable `goalUpdateSchema`.
+- **Snippet:**
+```javascript
+38: export const goalUpdateSchema = z.object({
+39:   title: z.string().optional(),
+40:   description: z.string().optional(),
+41:   targetDate: z.string().optional(),
+```
+
+#### Constant: `goalIdSchema`
+- **Purpose:** Exported or module-level variable `goalIdSchema`.
+- **Snippet:**
+```javascript
+45: export const goalIdSchema = z.object({
+46:   goalId: z.string().min(1),
+47: });
+48: 
+```
+
+#### Constant: `habitCreateSchema`
+- **Purpose:** Exported or module-level variable `habitCreateSchema`.
+- **Snippet:**
+```javascript
+50: export const habitCreateSchema = z.object({
+51:   title: z.string().min(1),
+52:   frequency: z.enum(['daily', 'weekly']).default('daily'),
+53: });
+```
+
+#### Constant: `habitUpdateSchema`
+- **Purpose:** Exported or module-level variable `habitUpdateSchema`.
+- **Snippet:**
+```javascript
+55: export const habitUpdateSchema = z.object({
+56:   title: z.string().optional(),
+57:   frequency: z.enum(['daily', 'weekly']).optional(),
+58: });
+```
+
+#### Constant: `habitIdSchema`
+- **Purpose:** Exported or module-level variable `habitIdSchema`.
+- **Snippet:**
+```javascript
+60: export const habitIdSchema = z.object({
+61:   habitId: z.string().min(1),
+62: });
+63: 
 ```
 
 #### Constant: `settingsUpdateSchema`
 - **Purpose:** Exported or module-level variable `settingsUpdateSchema`.
 - **Snippet:**
 ```javascript
-30: export const settingsUpdateSchema = z.object({
-31:   workHours: z.object({
-32:     start: z.string().regex(/^\d{2}:\d{2}$/),
-33:     end: z.string().regex(/^\d{2}:\d{2}$/),
+65: export const settingsUpdateSchema = z.object({
+66:   workHours: z.object({
+67:     start: z.string().regex(/^\d{2}:\d{2}$/),
+68:     end: z.string().regex(/^\d{2}:\d{2}$/),
 ```
 
 #### Constant: `gmailIngestSchema`
 - **Purpose:** Exported or module-level variable `gmailIngestSchema`.
 - **Snippet:**
 ```javascript
-49: export const gmailIngestSchema = z.object({
-50:   messageId: z.string().min(1),
-51: });
-52: 
+87: export const gmailIngestSchema = z.object({
+88:   messageId: z.string().min(1),
+89: });
+90: 
 ```
 
 #### Constant: `telegramIngestSchema`
 - **Purpose:** Exported or module-level variable `telegramIngestSchema`.
 - **Snippet:**
 ```javascript
-53: export const telegramIngestSchema = z.object({
-54:   // Telegram webhook update object — we extract what we need in the handler
-55: }).passthrough();
-56: 
+91: export const telegramIngestSchema = z.object({
+92:   // Telegram webhook update object — we extract what we need in the handler
+93: }).passthrough();
+94: 
 ```
 
 #### Constant: `slackIngestSchema`
 - **Purpose:** Exported or module-level variable `slackIngestSchema`.
 - **Snippet:**
 ```javascript
-57: export const slackIngestSchema = z.object({
-58:   channel: z.string().min(1),
-59:   ts: z.string().min(1),
-60: });
+95: export const slackIngestSchema = z.object({
+96:   channel: z.string().min(1),
+97:   ts: z.string().min(1),
+98: });
 ```
 
 #### Constant: `riskBatchSchema`
 - **Purpose:** Exported or module-level variable `riskBatchSchema`.
 - **Snippet:**
 ```javascript
-62: export const riskBatchSchema = z.object({}).passthrough();
-63: 
+100: export const riskBatchSchema = z.object({}).passthrough();
+101: 
 ```
 
 ### lib/stateSigner.js
@@ -1389,30 +1732,30 @@ This report documents all files, functions, and exports under `backend/src`.
 ```javascript
 10: function getAi() {
 11:   if (!aiInstance) {
-12:     aiInstance = new GoogleGenAI({
-13:       vertexai: true,
-14:       project: process.env.GOOGLE_CLOUD_PROJECT || 'niyro-e3ddb',
+12:     const project = process.env.GOOGLE_CLOUD_PROJECT;
+13:     if (!project) throw new Error('GOOGLE_CLOUD_PROJECT environment variable is missing');
+14:     aiInstance = new GoogleGenAI({
 ```
 
 #### Function: `getEmbedding(text)`
 - **Purpose:** Handles logic for `getEmbedding`.
 - **Snippet:**
 ```javascript
-28: export async function getEmbedding(text) {
-29:   if (!text) {
-30:     throw new Error('Input text is required for embedding');
-31:   }
-32: 
+30: export async function getEmbedding(text) {
+31:   if (!text) {
+32:     throw new Error('Input text is required for embedding');
+33:   }
+34: 
 ```
 
 #### Arrow Function: `getModel`
 - **Purpose:** Exported or module-level variable `getModel`.
 - **Snippet:**
 ```javascript
-21: const getModel = () => process.env.EMBEDDING_MODEL || 'gemini-embedding-001';
-22: 
-23: /**
-24:  * Retrieve an embedding vector for a given text.
+23: const getModel = () => process.env.EMBEDDING_MODEL || 'gemini-embedding-001';
+24: 
+25: /**
+26:  * Retrieve an embedding vector for a given text.
 ```
 
 ## middleware
@@ -1540,6 +1883,57 @@ This report documents all files, functions, and exports under `backend/src`.
 9: // POST /api/v1/chat
 ```
 
+### routes/cron.js
+<a id="routescronjs"></a>
+
+**Path:** `backend/src/routes/cron.js`
+
+**Description:** Component in routes module.
+
+#### Constant: `router`
+- **Purpose:** Exported or module-level variable `router`.
+- **Snippet:**
+```javascript
+5: const router = express.Router();
+6: 
+7: router.post('/daily-briefing', schedulerAuth, async (req, res) => {
+8:   await runDailyBriefing();
+```
+
+### routes/goals.js
+<a id="routesgoalsjs"></a>
+
+**Path:** `backend/src/routes/goals.js`
+
+**Description:** Component in routes module.
+
+#### Constant: `router`
+- **Purpose:** Exported or module-level variable `router`.
+- **Snippet:**
+```javascript
+6: const router = express.Router();
+7: 
+8: router.get('/', getGoals);
+9: router.post('/', validateRequest(goalCreateSchema), createGoal);
+```
+
+### routes/habits.js
+<a id="routeshabitsjs"></a>
+
+**Path:** `backend/src/routes/habits.js`
+
+**Description:** Component in routes module.
+
+#### Constant: `router`
+- **Purpose:** Exported or module-level variable `router`.
+- **Snippet:**
+```javascript
+6: const router = express.Router();
+7: 
+8: router.get('/', getHabits);
+9: router.post('/', validateRequest(habitCreateSchema), createHabit);
+```
+
 ### routes/ingest.js
 <a id="routesingestjs"></a>
 
@@ -1557,6 +1951,23 @@ This report documents all files, functions, and exports under `backend/src`.
 12: router.post('/', authMiddleware, runIngestion);
 ```
 
+### routes/recommendations.js
+<a id="routesrecommendationsjs"></a>
+
+**Path:** `backend/src/routes/recommendations.js`
+
+**Description:** Component in routes module.
+
+#### Constant: `router`
+- **Purpose:** Exported or module-level variable `router`.
+- **Snippet:**
+```javascript
+5: const router = express.Router();
+6: 
+7: router.use(authMiddleware);
+8: 
+```
+
 ### routes/riskBatch.js
 <a id="routesriskBatchjs"></a>
 
@@ -1568,20 +1979,20 @@ This report documents all files, functions, and exports under `backend/src`.
 - **Purpose:** Exported or module-level variable `router`.
 - **Snippet:**
 ```javascript
-5: const router = express.Router();
-6: 
-7: const schedulerAuth = (req, res, next) => {
-8:   const secret = process.env.CRON_SECRET;
+7: const router = express.Router();
+8: 
+9: export const schedulerAuth = (req, res, next) => {
+10:   const secret = process.env.CRON_SECRET;
 ```
 
 #### Arrow Function: `schedulerAuth`
 - **Purpose:** Exported or module-level variable `schedulerAuth`.
 - **Snippet:**
 ```javascript
-7: const schedulerAuth = (req, res, next) => {
-8:   const secret = process.env.CRON_SECRET;
-9:   const header = req.headers['authorization'];
-10:   if (secret && header === `Bearer ${secret}`) return next();
+9: export const schedulerAuth = (req, res, next) => {
+10:   const secret = process.env.CRON_SECRET;
+11:   const header = req.headers['authorization'];
+12:   if (secret && header === `Bearer ${secret}`) return next();
 ```
 
 ### routes/settings.js
@@ -1732,19 +2143,19 @@ This report documents all files, functions, and exports under `backend/src`.
 - **Purpose:** Exported or module-level variable `app`.
 - **Snippet:**
 ```javascript
-30: const app = express();
-31: app.use(cors());
-32: app.use(express.json());
-33: app.use(requestId);
+33: const app = express();
+34: app.use(cors());
+35: app.use(express.json());
+36: app.use(requestId);
 ```
 
 #### Constant: `PORT`
 - **Purpose:** Exported or module-level variable `PORT`.
 - **Snippet:**
 ```javascript
-58: const PORT = process.env.PORT || 8080;
-59: app.listen(PORT, '0.0.0.0', () => {
-60:   console.log(`🚀 Niyro Backend listening on port ${PORT} (0.0.0.0)`);
-61: });
+65: const PORT = process.env.PORT || 8080;
+66: app.listen(PORT, '0.0.0.0', () => {
+67:   console.log(`🚀 Niyro Backend listening on port ${PORT} (0.0.0.0)`);
+68: });
 ```
 

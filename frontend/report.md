@@ -9,10 +9,13 @@ This report documents all files, functions, and exports under `frontend/src`.
   - [components/Chip.tsx](#componentsChiptsx)
   - [components/ErrorBoundary.tsx](#componentsErrorBoundarytsx)
   - [components/Footer.tsx](#componentsFootertsx)
+  - [components/GoalCard.tsx](#componentsGoalCardtsx)
+  - [components/HabitItem.tsx](#componentsHabitItemtsx)
   - [components/Marquee.tsx](#componentsMarqueetsx)
   - [components/Navbar.tsx](#componentsNavbartsx)
   - [components/Particles.tsx](#componentsParticlestsx)
   - [components/ProtectedRoute.tsx](#componentsProtectedRoutetsx)
+  - [components/RecommendationCard.tsx](#componentsRecommendationCardtsx)
   - [components/RiskBadge.tsx](#componentsRiskBadgetsx)
   - [components/SideNav.tsx](#componentsSideNavtsx)
   - [components/SourceBadge.tsx](#componentsSourceBadgetsx)
@@ -21,6 +24,8 @@ This report documents all files, functions, and exports under `frontend/src`.
   - [context/AuthContext.tsx](#contextAuthContexttsx)
 - [hooks](#hooks)
   - [hooks/useDashboardData.ts](#hooksuseDashboardDatats)
+  - [hooks/useGoalsAndHabits.ts](#hooksuseGoalsAndHabitsts)
+  - [hooks/useRecommendations.ts](#hooksuseRecommendationsts)
   - [hooks/useUserSettings.ts](#hooksuseUserSettingsts)
 - [lib](#lib)
   - [lib/apiClient.ts](#libapiClientts)
@@ -112,6 +117,40 @@ This report documents all files, functions, and exports under `frontend/src`.
 6:       <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-[1400px] justify-between px-margin-desktop">
 ```
 
+### components/GoalCard.tsx
+<a id="componentsGoalCardtsx"></a>
+
+**Path:** `frontend/src/components/GoalCard.tsx`
+
+**Description:** Component in components module.
+
+#### Arrow Function: `GoalCard`
+- **Purpose:** Exported or module-level variable `GoalCard`.
+- **Snippet:**
+```typescript
+12: export const GoalCard: React.FC<GoalCardProps> = ({ goal, onComplete, onMomentumBoost }) => {
+13:   const [loading, setLoading] = useState(false);
+14:   
+15:   const isCompleted = goal.status === 'completed';
+```
+
+### components/HabitItem.tsx
+<a id="componentsHabitItemtsx"></a>
+
+**Path:** `frontend/src/components/HabitItem.tsx`
+
+**Description:** Component in components module.
+
+#### Arrow Function: `HabitItem`
+- **Purpose:** Exported or module-level variable `HabitItem`.
+- **Snippet:**
+```typescript
+12: export const HabitItem: React.FC<HabitItemProps> = ({ habit, onComplete, onMomentumBoost }) => {
+13:   const [loading, setLoading] = useState(false);
+14:   
+15:   const completedToday = habit.lastCompletedDate ? isToday(parseISO(habit.lastCompletedDate)) : false;
+```
+
 ### components/Marquee.tsx
 <a id="componentsMarqueetsx"></a>
 
@@ -178,6 +217,23 @@ This report documents all files, functions, and exports under `frontend/src`.
 10:   const { user, loading } = useAuth();
 11:   const location = useLocation();
 12: 
+```
+
+### components/RecommendationCard.tsx
+<a id="componentsRecommendationCardtsx"></a>
+
+**Path:** `frontend/src/components/RecommendationCard.tsx`
+
+**Description:** Component in components module.
+
+#### Arrow Function: `RecommendationCard`
+- **Purpose:** Exported or module-level variable `RecommendationCard`.
+- **Snippet:**
+```typescript
+9: export const RecommendationCard: React.FC<RecommendationCardProps> = ({ rec }) => {
+10:   const navigate = useNavigate();
+11:   
+12:   const priorityColors = {
 ```
 
 ### components/RiskBadge.tsx
@@ -306,6 +362,41 @@ This report documents all files, functions, and exports under `frontend/src`.
 54:   const [tasks, setTasks] = useState<TaskData[]>([]);
 ```
 
+### hooks/useGoalsAndHabits.ts
+<a id="hooksuseGoalsAndHabitsts"></a>
+
+**Path:** `frontend/src/hooks/useGoalsAndHabits.ts`
+
+**Description:** Component in hooks module.
+
+#### Function: `useGoalsAndHabits()`
+- **Purpose:** Handles logic for `useGoalsAndHabits`.
+- **Snippet:**
+```typescript
+6: export function useGoalsAndHabits() {
+7:   const { user } = useAuth();
+8:   const [goals, setGoals] = useState<Goal[]>([]);
+9:   const [habits, setHabits] = useState<Habit[]>([]);
+10:   const [loading, setLoading] = useState(true);
+```
+
+### hooks/useRecommendations.ts
+<a id="hooksuseRecommendationsts"></a>
+
+**Path:** `frontend/src/hooks/useRecommendations.ts`
+
+**Description:** Component in hooks module.
+
+#### Constant: `useRecommendations`
+- **Purpose:** Exported or module-level variable `useRecommendations`.
+- **Snippet:**
+```typescript
+5: export const useRecommendations = () => {
+6:   const { user } = useAuth();
+7:   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+8:   const [memoryPatterns, setMemoryPatterns] = useState<MemoryPattern[]>([]);
+```
+
 ### hooks/useUserSettings.ts
 <a id="hooksuseUserSettingsts"></a>
 
@@ -317,10 +408,10 @@ This report documents all files, functions, and exports under `frontend/src`.
 - **Purpose:** Exported or module-level variable `useUserSettings`.
 - **Snippet:**
 ```typescript
-24: export const useUserSettings = () => {
-25:   const { user } = useAuth();
-26:   const [settings, setSettings] = useState<UserSettings | null>(null);
-27:   const [loading, setLoading] = useState(true);
+27: export const useUserSettings = () => {
+28:   const { user } = useAuth();
+29:   const [settings, setSettings] = useState<UserSettings | null>(null);
+30:   const [loading, setLoading] = useState(true);
 ```
 
 ## lib
@@ -357,10 +448,8 @@ This report documents all files, functions, and exports under `frontend/src`.
 - **Purpose:** Exported or module-level variable `api`.
 - **Snippet:**
 ```typescript
-55: export const api = {
-56:   // Tasks
-57:   createTask: (data: { title: string; description?: string; dueAt?: string; estimatedMinutes?: number }) => 
-58:     fetchApi<{ success: boolean; taskId: string }>('/api/v1/tasks', {
+229: export const api = new ApiClient();
+230: 
 ```
 
 #### Class: `ApiError`
@@ -372,6 +461,17 @@ This report documents all files, functions, and exports under `frontend/src`.
 7:   constructor(status: number, message: string) {
 8:     super(message);
 9:     this.status = status;
+```
+
+#### Class: `ApiClient`
+- **Purpose:** Defines the `ApiClient` class.
+- **Snippet:**
+```typescript
+109: class ApiClient {
+110:   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+111:     return fetchApi<T>(`/api/v1${endpoint}`, options);
+112:   }
+113: 
 ```
 
 ### lib/firebase.ts
@@ -492,10 +592,10 @@ This report documents all files, functions, and exports under `frontend/src`.
 - **Purpose:** Exported or module-level variable `Dashboard`.
 - **Snippet:**
 ```typescript
-9: export const Dashboard: React.FC = () => {
-10:   const navigate = useNavigate();
-11:   const { user } = useAuth();
-12:   const { userData, tasks, activities, approvals, loading } = useDashboardData();
+14: export const Dashboard: React.FC = () => {
+15:   const navigate = useNavigate();
+16:   const { user } = useAuth();
+17:   const { userData, tasks, activities, approvals, loading } = useDashboardData();
 ```
 
 ### pages/Focus.tsx
@@ -509,10 +609,10 @@ This report documents all files, functions, and exports under `frontend/src`.
 - **Purpose:** Exported or module-level variable `Focus`.
 - **Snippet:**
 ```typescript
-5: export const Focus: React.FC = () => {
-6:   const { tasks, loading } = useDashboardData();
-7:   const [timeLeft, setTimeLeft] = useState(45 * 60); // 45 minutes
-8:   const [isActive, setIsActive] = useState(true);
+6: export const Focus: React.FC = () => {
+7:   const { tasks, loading: tasksLoading } = useDashboardData();
+8:   const { settings, loading: settingsLoading } = useUserSettings();
+9:   
 ```
 
 ### pages/Landing.tsx

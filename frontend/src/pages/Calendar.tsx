@@ -71,9 +71,9 @@ export const Calendar: React.FC = () => {
       if (agent === 'schedule') await api.scheduleTask(taskId);
       if (agent === 'lastMinute') await api.lastMinuteTask(taskId);
       alert('Agent triggered successfully.');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Agent failed to run.');
+      alert(`Agent failed to run: ${err.message || 'Unknown error'}`);
     } finally {
       setProcessingId(null);
     }

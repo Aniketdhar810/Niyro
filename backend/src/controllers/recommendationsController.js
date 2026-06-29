@@ -1,5 +1,6 @@
 import { db } from '../lib/firestoreClient.js';
 import { generateRecommendations } from '../agents/recommendationsAgent.js';
+import { extractPatterns } from '../agents/memoryAgent.js';
 import logger from '../lib/logger.js';
 
 export async function getRecommendations(req, res) {
@@ -19,6 +20,13 @@ export async function getRecommendations(req, res) {
       }
     });
     
+    // Fetch AI Memory patterns
+    const memorySnap = await db.collection('users').doc(uid).collection('aiMemory').get();
+    const memoryPatterns = [];
+    memorySnap.forEach(doc => {
+      memoryPatterns.push(doc.data());
+    });
+
     // Fetch meta doc for generatedAt
     const metaDoc = await db.collection('users').doc(uid).collection('recommendations').doc('_meta').get();
     const generatedAt = metaDoc.exists ? metaDoc.data().generatedAt : null;
@@ -31,6 +39,7 @@ export async function getRecommendations(req, res) {
     res.json({
       success: true,
       recommendations,
+      memoryPatterns,
       generatedAt,
       nextRefreshAvailable
     });
@@ -61,9 +70,13 @@ export async function refreshRecommendations(req, res) {
     }
     
     // Generate new ones
-    const recommendations = await generateRecommendations(uid);
+    // Run both agents in parallel to save time
+    const [recommendations, memoryPatterns] = await Promise.all([
+      generateRecommendations(uid),
+      extractPatterns(uid)
+    ]);
     
-    res.json({ success: true, recommendations });
+    res.json({ success: true, recommendations, memoryPatterns });
   } catch (error) {
     logger.error(`Error refreshing recommendations for uid=${req.user?.uid}:`, error);
     res.status(500).json({ success: false, error: 'Failed to refresh recommendations' });

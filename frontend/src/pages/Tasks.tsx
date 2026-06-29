@@ -56,11 +56,27 @@ export const Tasks: React.FC = () => {
     try {
       setProcessingId(taskId);
       await api.completeTask(taskId);
+      // Removed optimistic UI update since onSnapshot handles it
     } catch (e) {
       console.error(e);
       alert('Failed to complete task.');
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const toggleTaskStep = async (taskId: string, stepId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.steps) return;
+    
+    const updatedSteps = task.steps.map(step => 
+      step.id === stepId ? { ...step, done: !step.done } : step
+    );
+    
+    try {
+      await api.updateTask(taskId, { steps: updatedSteps });
+    } catch (e) {
+      console.error('Failed to update step:', e);
     }
   };
 
@@ -72,9 +88,9 @@ export const Tasks: React.FC = () => {
       if (agent === 'schedule') await api.scheduleTask(taskId);
       if (agent === 'lastMinute') await api.lastMinuteTask(taskId);
       alert('Agent triggered successfully.');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Agent failed to run.');
+      alert(`Agent failed to run: ${e.message || 'Unknown error'}`);
     } finally {
       setProcessingId(null);
     }
@@ -186,9 +202,9 @@ export const Tasks: React.FC = () => {
               <li key={step.id} className="flex items-start gap-3 bg-surface p-3 border-2 border-on-surface shadow-[2px_2px_0px_#0A0A0A]">
                 <input 
                   type="checkbox" 
-                  checked={step.done}
-                  readOnly
-                  className="mt-0.5 appearance-none w-5 h-5 border-2 border-on-surface bg-surface checked:bg-secondary-fixed relative shrink-0
+                  checked={step.done || false}
+                  onChange={() => toggleTaskStep(task.id, step.id)}
+                  className="mt-0.5 appearance-none cursor-pointer w-5 h-5 border-2 border-on-surface bg-surface checked:bg-secondary-fixed relative shrink-0
                   checked:after:content-[''] checked:after:absolute checked:after:left-[4px] checked:after:top-[1px] checked:after:w-[7px] checked:after:h-[12px] checked:after:border-solid checked:after:border-on-surface checked:after:border-b-2 checked:after:border-r-2 checked:after:rotate-45"
                 />
                 <div className="flex-1 flex flex-col min-w-0">

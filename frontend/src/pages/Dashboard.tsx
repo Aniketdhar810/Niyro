@@ -7,13 +7,20 @@ import { format, parseISO, isToday, isFuture, differenceInMinutes } from 'date-f
 import { api } from '../lib/apiClient';
 import { useRecommendations } from '../hooks/useRecommendations';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { useGoalsAndHabits } from '../hooks/useGoalsAndHabits';
+import { GoalCard } from '../components/GoalCard';
+import { HabitItem } from '../components/HabitItem';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userData, tasks, activities, approvals, loading } = useDashboardData();
-  const { recommendations, loading: recsLoading, refresh, refreshing, canRefresh, generatedAt } = useRecommendations();
+  const { recommendations, memoryPatterns, loading: recsLoading, refresh, refreshing, canRefresh, generatedAt } = useRecommendations();
+  const { goals, habits, addGoal, addHabit, markGoalCompleted, markHabitCompleted } = useGoalsAndHabits();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newHabitTitle, setNewHabitTitle] = useState('');
 
   // Derived calculations
   const focusScore = userData?.momentum?.focusScore ?? 0;
@@ -52,14 +59,14 @@ export const Dashboard: React.FC = () => {
     dayRiskBorder = 'border-l-secondary';
   }
 
-  // Schedule calculation
   const scheduleItems = useMemo(() => {
-    const items: { id: string; time: string; title: string; done: boolean }[] = [];
+    const items: { id: string; taskId: string; time: string; title: string; done: boolean }[] = [];
     tasks.forEach(t => {
       t.steps?.forEach(step => {
         if (step.scheduledAt && isToday(parseISO(step.scheduledAt))) {
           items.push({
             id: step.id,
+            taskId: t.id,
             time: format(parseISO(step.scheduledAt), 'HH:mm'),
             title: step.title,
             done: !!step.done
@@ -112,6 +119,20 @@ export const Dashboard: React.FC = () => {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleAddGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoalTitle.trim()) return;
+    await addGoal(newGoalTitle);
+    setNewGoalTitle('');
+  };
+
+  const handleAddHabit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHabitTitle.trim()) return;
+    await addHabit(newHabitTitle);
+    setNewHabitTitle('');
   };
 
   return (
@@ -238,9 +259,46 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* Main Workspace Area */}
+        {/* Main Workspace Area */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-8">
-          {/* Agent Activity Feed */}
-          <div className="lg:col-span-2 bg-surface-container-lowest border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] p-6 md:p-8">
+          
+          <div className="lg:col-span-2 flex flex-col gap-gutter">
+            
+            {/* Active Goals */}
+            <div className="bg-surface-container-lowest border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] p-6 md:p-8">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b-border-width border-on-surface">
+                <h2 className="font-headline-md text-headline-md font-bold uppercase">Active Goals</h2>
+              </div>
+              <div className="space-y-4">
+                {goals.filter(g => g.status === 'active').map(goal => (
+                  <GoalCard 
+                    key={goal.id} 
+                    goal={goal} 
+                    onComplete={markGoalCompleted} 
+                    onMomentumBoost={() => {
+                      // Let dashboard data re-fetch on massive boost
+                    }} 
+                  />
+                ))}
+                {goals.filter(g => g.status === 'active').length === 0 && (
+                  <div className="text-on-surface-variant font-label-mono text-sm">No active goals. Add a big objective to aim for!</div>
+                )}
+              </div>
+              
+              <form onSubmit={handleAddGoal} className="mt-6 flex gap-2">
+                <input 
+                  type="text" 
+                  value={newGoalTitle} 
+                  onChange={(e) => setNewGoalTitle(e.target.value)} 
+                  placeholder="Set a new Goal..." 
+                  className="flex-1 bg-surface border-2 border-on-surface p-2 font-mono text-on-surface focus:outline-none focus:bg-primary/10"
+                />
+                <button type="submit" className="bg-primary text-on-primary font-bold font-mono px-4 border-2 border-on-surface hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-y-1">ADD</button>
+              </form>
+            </div>
+
+            {/* Agent Activity Feed */}
+            <div className="bg-surface-container-lowest border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] p-6 md:p-8">
             <div className="flex justify-between items-center mb-6 pb-4 border-b-border-width border-on-surface">
               <h2 className="font-headline-md text-headline-md font-bold">What Niyro did for you today</h2>
               <div className="h-8 w-auto flex items-center">
@@ -317,9 +375,70 @@ export const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+          
+          {/* AI Memory Section */}
+          {memoryPatterns && memoryPatterns.length > 0 && (
+            <div className="lg:col-span-2 bg-surface-variant text-on-surface border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] p-6 md:p-8 mt-gutter relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <span className="material-symbols-outlined text-6xl">memory</span>
+              </div>
+              <h2 className="font-headline-md font-bold uppercase mb-4 flex items-center gap-2 relative z-10">
+                <span className="bg-on-surface text-surface px-2 py-1 text-xs">AI MEMORY</span>
+                Pattern Log
+              </h2>
+              <div className="flex flex-col gap-4 relative z-10">
+                {memoryPatterns.map((pattern) => (
+                  <div key={pattern.id} className="border-l-4 border-primary pl-4 py-2">
+                    <p className="font-label-mono text-sm opacity-80 mb-1">OBSERVED:</p>
+                    <p className="font-body-md font-bold mb-2">"{pattern.observation}"</p>
+                    <p className="font-label-mono text-sm opacity-80 mb-1">ACTIONABLE RULE:</p>
+                    <p className="font-body-md bg-primary/20 inline-block px-2 py-1 border border-primary">{pattern.actionableRule}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          </div>
 
           {/* Context / Actions Panel */}
           <div className="flex flex-col gap-6">
+            {/* Daily Habits */}
+            <div className="bg-surface-container-lowest border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A]">
+              <div className="p-4 border-b-2 border-on-surface bg-surface sticky top-0 z-10">
+                <h3 className="font-label-mono text-label-mono uppercase font-bold text-on-surface-variant">Daily Habits</h3>
+              </div>
+              
+              <div className="flex flex-col">
+                {habits.map(habit => (
+                  <HabitItem 
+                    key={habit.id} 
+                    habit={habit} 
+                    onComplete={markHabitCompleted} 
+                    onMomentumBoost={() => {
+                      // Trigger re-fetch for focus score naturally
+                    }} 
+                  />
+                ))}
+                {habits.length === 0 && (
+                  <div className="p-4 text-on-surface-variant font-label-mono text-sm">No habits configured.</div>
+                )}
+              </div>
+              
+              <div className="p-4 border-t-2 border-on-surface bg-surface">
+                <form onSubmit={handleAddHabit} className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newHabitTitle} 
+                    onChange={(e) => setNewHabitTitle(e.target.value)} 
+                    placeholder="New habit..." 
+                    className="flex-1 min-w-0 bg-surface border-2 border-on-surface p-2 font-mono text-xs focus:outline-none focus:bg-primary/10"
+                  />
+                  <button type="submit" className="bg-primary text-on-primary font-bold font-mono px-3 text-xs border-2 border-on-surface hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-y-1">ADD</button>
+                </form>
+              </div>
+            </div>
+
             {/* Schedule */}
             <div className="bg-surface-container-lowest p-4 border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] max-h-64 overflow-y-auto">
               <h3 className="font-label-mono text-label-mono uppercase font-bold text-on-surface-variant mb-4 sticky top-0 bg-surface-container-lowest z-10 py-1">Schedule</h3>

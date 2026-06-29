@@ -9,7 +9,7 @@ export async function completeTask(req, res) {
   try {
     const uid = req.user.uid;
     const { taskId } = req.params;
-    const { actualMinutes } = req.body;
+    const { actualMinutes } = req.body || {};
 
     const taskRef = db.collection('users').doc(uid).collection('tasks').doc(taskId);
     const snap = await taskRef.get();
@@ -49,6 +49,7 @@ export async function completeTask(req, res) {
 
     res.json({ success: true, taskId, status: 'done' });
   } catch (error) {
+    console.error(`Error completing task ${req.params?.taskId}:`, error);
     res.status(500).json({ success: false, error: error.message });
   }
 }

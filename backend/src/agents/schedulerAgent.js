@@ -5,6 +5,7 @@
 import { db } from '../lib/firestoreClient.js';
 import { logActivity } from '../lib/activityLogger.js';
 import { solveBatch } from '../lib/schedulerSolver.js';
+import { planTask } from './plannerAgent.js';
 
 /**
  * Schedule a task's steps against the user's real calendar.
@@ -21,9 +22,14 @@ export async function scheduleTask(uid, taskId) {
   if (!taskSnap.exists) throw new Error(`Task ${taskId} not found`);
   const task = taskSnap.data();
 
-  const steps = task.steps || [];
+  let steps = task.steps || [];
   if (steps.length === 0) {
-    throw new Error('Task has no steps to schedule. Run the planner first.');
+    // Auto-run planner if no steps exist
+    console.log(`Task ${taskId} has no steps. Auto-running planner...`);
+    steps = await planTask(uid, taskId);
+    if (!steps || steps.length === 0) {
+      throw new Error('Task has no steps and planner could not generate any.');
+    }
   }
 
   // Only schedule steps that aren't already scheduled and aren't done.

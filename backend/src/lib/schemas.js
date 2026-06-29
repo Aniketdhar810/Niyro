@@ -12,6 +12,7 @@ export const taskCreateSchema = z.object({
   dueAt: z.string().optional(),
   estimatedMinutes: z.number().int().positive().optional(),
   source: z.enum(['gmail', 'telegram', 'slack', 'voice', 'manual']).optional().default('manual'),
+  goalId: z.string().optional(),
 });
 
 export const taskUpdateSchema = z.object({
@@ -20,10 +21,45 @@ export const taskUpdateSchema = z.object({
   dueAt: z.string().optional(),
   estimatedMinutes: z.number().int().positive().optional(),
   status: z.enum(['pending', 'in_progress', 'done']).optional(),
+  goalId: z.string().optional(),
+  steps: z.array(z.any()).optional(),
 });
 
 export const taskIdSchema = z.object({
   taskId: z.string().min(1),
+});
+
+// Goals
+export const goalCreateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional().default(''),
+  targetDate: z.string().optional(),
+});
+
+export const goalUpdateSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  targetDate: z.string().optional(),
+  status: z.enum(['active', 'completed', 'abandoned']).optional(),
+});
+
+export const goalIdSchema = z.object({
+  goalId: z.string().min(1),
+});
+
+// Habits
+export const habitCreateSchema = z.object({
+  title: z.string().min(1),
+  frequency: z.enum(['daily', 'weekly']).default('daily'),
+});
+
+export const habitUpdateSchema = z.object({
+  title: z.string().optional(),
+  frequency: z.enum(['daily', 'weekly']).optional(),
+});
+
+export const habitIdSchema = z.object({
+  habitId: z.string().min(1),
 });
 
 // Settings update schema — passthrough for arbitrary map fields on user doc.
