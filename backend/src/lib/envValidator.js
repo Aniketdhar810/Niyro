@@ -33,4 +33,9 @@ export const validateEnv = () => {
   if (missingOptional.length) {
     console.warn('Optional environment variables not set:', missingOptional.join(', '));
   }
+
+  const optionalSlack = ['SLACK_CLIENT_ID', 'SLACK_CLIENT_SECRET', 'SLACK_SIGNING_SECRET', 'SLACK_CALLBACK_URL'];
+  optionalSlack.forEach(v => {
+    if (!process.env[v]) console.warn(`[Env] Optional Slack var ${v} not set — Slack ingestion disabled`);
+  });
 };

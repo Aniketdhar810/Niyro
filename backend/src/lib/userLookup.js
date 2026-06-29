@@ -53,3 +53,33 @@ export async function getUserIdByTelegramChatId(chatId) {
     return null;
   }
 }
+
+/**
+ * Look up a Niyro user by their Slack member ID and workspace team ID.
+ * Reads users/{uid}/integrations/slack.slackUserId
+ * 
+ * @param {string} slackUserId - The Slack member ID (e.g., U01ABCDEF)
+ * @param {string} teamId - The Slack workspace ID (e.g., T01ABCDEF)
+ * @returns {Promise<string|null>} - The Firebase UID or null
+ */
+export async function getUserIdBySlackUserId(slackUserId, teamId) {
+  if (!db) {
+    console.error('Firestore not initialized — cannot lookup user by Slack user ID');
+    return null;
+  }
+  
+  try {
+    const snap = await db
+      .collection('users')
+      .where('slackUserId', '==', slackUserId)
+      .where('slackTeamId', '==', teamId)
+      .limit(1)
+      .get();
+    
+    if (snap.empty) return null;
+    return snap.docs[0].id;
+  } catch (err) {
+    console.error(`[UserLookup] Slack user lookup failed: ${err.message}`);
+    return null;
+  }
+}

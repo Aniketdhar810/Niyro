@@ -15,6 +15,7 @@ import tasksRouter from './routes/tasks.js';
 import agentsRouter from './routes/agents.js';
 import ingestRouter from './routes/ingest.js';
 import authRouter from './routes/auth.js';
+import slackRouter from './routes/slack.js';
 import approvalsRouter from './routes/approvals.js';
 import riskBatchRouter from './routes/riskBatch.js';
 import settingsRouter from './routes/settings.js';
@@ -32,13 +33,21 @@ validateEnv();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    // Save raw body for Slack signature verification
+    if (req.originalUrl.startsWith('/api/v1/ingest/slack')) {
+      req.rawBody = buf.toString('utf8');
+    }
+  }
+}));
 app.use(requestId);
 
 // ---------------------------------------------------------
 // PUBLIC ROUTES
 // ---------------------------------------------------------
 app.use('/api/v1/auth', authRouter); // /login, /callback
+app.use('/api/v1/auth/slack', slackRouter); // Slack OAuth
 app.use('/api/v1/ingest', ingestRouter); // Includes webhooks and manual ingest
 app.use('/api/v1/agents', riskBatchRouter); // /risk/run batch route (scheduler)
 app.use('/api/v1/cron', cronRouter); // Cloud Scheduler cron jobs

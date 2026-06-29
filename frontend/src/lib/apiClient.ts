@@ -129,9 +129,16 @@ class ApiClient {
   }
 
   // Auth
-  async startGoogleOAuth() {
-    return this.request<{ authUrl: string }>('/auth/login');
-  }
+  getGoogleAuthUrl = () => fetchApi<{ authUrl: string }>('/api/v1/auth/google/login');
+  disconnectGoogle = () =>
+    fetchApi<{ success: boolean }>('/api/v1/auth/google/disconnect', { method: 'POST' });
+  syncGmail = () =>
+    fetchApi<{ success: boolean; processed: number }>('/api/v1/ingest/gmail/sync', {
+      method: 'POST',
+    });
+  getSlackAuthUrl = () => fetchApi<{ authUrl: string }>('/api/v1/auth/slack/login');
+  disconnectSlack = () =>
+    fetchApi<{ success: boolean }>('/api/v1/auth/slack/disconnect', { method: 'POST' });
 
   // Settings
   async updateSettings(updates: any) {

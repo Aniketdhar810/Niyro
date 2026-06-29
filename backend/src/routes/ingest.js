@@ -5,6 +5,7 @@ import { runIngestion } from '../controllers/ingestionController.js';
 import { getUserIdByTelegramChatId } from '../lib/userLookup.js';
 import { db } from '../lib/firestoreClient.js';
 import logger from '../lib/logger.js';
+import { handleSlackWebhook } from '../controllers/slackWebhookController.js';
 
 const router = express.Router();
 
@@ -170,5 +171,12 @@ router.post('/gmail/sync', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ── Slack Event Subscriptions webhook ────────
+// Signature verification relies on req.rawBody, populated by express.json() verify
+router.post(
+  '/slack',
+  handleSlackWebhook
+);
 
 export default router;

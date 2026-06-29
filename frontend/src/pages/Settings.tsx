@@ -26,13 +26,20 @@ export const Settings: React.FC = () => {
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [focusDuration, setFocusDuration] = useState(45);
   const [isSavingHours, setIsSavingHours] = useState(false);
+  const gmailJustConnected = searchParams.get('gmailConnected') === 'true';
+  const gmailError = searchParams.get('gmailError');
+  const slackJustConnected = searchParams.get('slackConnected') === 'true';
+  const slackError = searchParams.get('slackError');
 
   useEffect(() => {
-    const gmailJustConnected = searchParams.get('gmailConnected') === 'true';
     if (gmailJustConnected) {
       navigate('/settings', { replace: true });
+      alert('Gmail connected successfully!');
+    } else if (gmailError) {
+      navigate('/settings', { replace: true });
+      alert('Failed to connect Gmail.');
     }
-  }, [searchParams, navigate]);
+  }, [gmailJustConnected, gmailError, navigate]);
 
   useEffect(() => {
     if (settings?.workHours) {
@@ -56,10 +63,24 @@ export const Settings: React.FC = () => {
     if (key === 'autonomousActions') setAutonomousActions(value);
     
     // @ts-ignore - updateSettings can merge partials
-    await updateSettings({
+    await api.updateSettings({
       [`notificationPrefs.${key}`]: value
     });
   };
+
+  // Handle Slack OAuth redirect feedback
+  useEffect(() => {
+    if (slackError === 'cancelled') {
+      navigate('/settings', { replace: true });
+      alert('Slack connection cancelled.');
+    } else if (slackError) {
+      navigate('/settings', { replace: true });
+      alert('Failed to connect Slack.');
+    } else if (slackJustConnected) {
+      navigate('/settings', { replace: true });
+      alert('Slack connected! Send messages to your Niyro bot to add tasks.');
+    }
+  }, [slackError, slackJustConnected, navigate]);
 
   const handleSignOut = async () => {
     try {
@@ -112,7 +133,7 @@ export const Settings: React.FC = () => {
       toggleChannel('gmail', false);
     } else {
       try {
-        const { authUrl } = await api.startGoogleOAuth();
+        const { authUrl } = await api.getGoogleAuthUrl();
         window.location.href = authUrl;
       } catch (e) {
         console.error(e);
@@ -235,7 +256,24 @@ export const Settings: React.FC = () => {
                 <h3 className="font-headline-md text-[20px] text-on-surface mb-1 font-bold">Slack</h3>
                 <p className="font-label-mono text-label-mono-sm text-on-surface-variant mb-6 uppercase">Monitors project channels</p>
                 <button 
-                  onClick={() => alert("Slack integration coming soon!")}
+                  onClick={async () => {
+                    if (isConnected('slack')) {
+                      try {
+                        await api.disconnectSlack();
+                        toggleChannel('slack', false);
+                      } catch (err) {
+                        alert('Failed to disconnect Slack');
+                      }
+                    } else {
+                      try {
+                        const response = await api.getSlackAuthUrl();
+                        window.location.href = response.authUrl;
+                      } catch (err) {
+                        console.error('Failed to get Slack auth URL', err);
+                        alert('Failed to start Slack connection');
+                      }
+                    }
+                  }}
                   className={`font-label-mono text-label-mono px-6 py-2 w-full uppercase font-bold border-2 border-on-surface rounded-full shadow-[4px_4px_0px_#0A0A0A] active:shadow-[2px_2px_0px_#0A0A0A] active:translate-x-[2px] active:translate-y-[2px] transition-all ${isConnected('slack') ? 'bg-surface text-on-surface' : 'bg-primary text-on-primary'}`}
                 >
                   {isConnected('slack') ? 'Disconnect' : 'Connect'}

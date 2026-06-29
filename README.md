@@ -9,7 +9,7 @@
   </p>
 
   ### 🔗 Important Links
-  **[Live Project](https://niyro-e3ddb.web.app)** | **[GitHub Repository](https://github.com/Aniketdhar810/Niyro)** | **[Presentation / Project Description](#)**
+  **[Live Project](https://niyro-e3ddb.web.app)** | **[GitHub Repository](https://github.com/Aniketdhar810/Niyro)**
 
   **Platform:** Web Application (Responsive Desktop & Mobile)
 </div>
@@ -24,17 +24,49 @@ Niyro solves this by being a centralized intelligence layer that automatically p
 
 ## 💡 Our Solution
 
-**Niyro** is a context-aware AI productivity assistant that acts as your centralized intelligence layer. It silently ingests tasks from all your communication channels, analyzes deadline risks using advanced AI, and organizes your day. Instead of manually tracking what's due, you simply ask Niyro, or let its automated morning briefings guide you. When it's time to work, Niyro's dedicated Focus Mode blocks out the noise so you can execute.
+**Niyro** is a context-aware AI productivity assistant. It silently ingests tasks from your communication channels, analyzes deadline risks using advanced AI, and organizes your day. Instead of manually tracking what's due, you let Niyro handle the extraction, organization, and reminders. When it's time to work, Niyro's dedicated Focus Mode blocks out the noise so you can execute.
 
 ---
 
-## 🌟 The User Experience (How it Flows)
+## 🌟 How Ingestion Works (User Experience)
 
-1. **Silent Ingestion:** You connect your Gmail, Slack, and Telegram accounts. Niyro's webhooks securely monitor incoming data and extract actionable tasks in the background without any manual data entry.
-2. **The Morning Briefing:** At 8:00 AM, you receive a curated "Daily Briefing" straight to your Telegram, outlining your most critical tasks and warning you of any deadlines whose completion probability has dropped below 70%.
-3. **Conversational Planning:** Throughout the day, you open the Niyro dashboard. Instead of scrolling through endless lists, you simply ask the AI Assistant: *"What's at risk this week?"* or *"Draft a deferral for my math project."* The AI responds instantly using context-aware Retrieval-Augmented Generation (RAG).
-4. **Deep Work Execution:** You launch **Focus Mode**, setting your preferred session duration. The brutalist, distraction-free UI keeps you locked in, while Niyro can autonomously decline non-essential calendar invites during this block.
-5. **AI Recommendations:** Niyro tracks your task completion patterns and provides highly personalized productivity recommendations to optimize your workflow.
+The cornerstone of Niyro is its seamless task ingestion. We designed it to be completely frictionless, removing the need for manual data entry.
+
+**The Gmail Ingestion Flow:**
+1. **Connect & Forget:** You connect your Google account securely via OAuth in the Niyro dashboard.
+2. **The "Niyro" Label:** Once connected, Niyro automatically generates a special label named **`Niyro`** in your Gmail inbox.
+3. **Intentional Tagging:** When you receive an email containing actionable items (e.g., a project brief from a client), you simply apply the `Niyro` label to it. You don't have to leave Gmail.
+4. **Autonomous Polling:** Every 15 minutes, a Cloud Scheduler cron job quietly polls your inbox for any emails containing the `Niyro` label.
+5. **AI Extraction:** Niyro extracts the raw text and sends it to our custom **Ingestion Agent** powered by Gemini. The agent intelligently reads the context, extracts the core task, estimates how long it will take, identifies any hard deadlines, and breaks the task down into smaller actionable steps.
+6. **Task Creation & Cleanup:** The parsed task is instantly pushed to your Niyro dashboard via real-time Firestore listeners. Simultaneously, Niyro removes the `Niyro` label from the email in your inbox to ensure it is never processed twice.
+
+*The exact same flow applies to our Slack and Telegram integrations via real-time push Webhooks!*
+
+---
+
+## 🤖 The AI Agents of Niyro
+
+Niyro is powered by a swarm of specialized AI agents working together asynchronously to manage your workflow. 
+
+### 1. 📥 Ingestion Agent
+* **What it does:** Reads messy, unstructured text (from emails or chat messages) and synthesizes it into a highly structured JSON Task object with titles, deadlines, steps, and time estimates.
+* **When it triggers:** Automatically every 15 minutes (via the Gmail Polling cron job) or instantly when a Slack/Telegram webhook is received.
+
+### 2. ⚠️ Risk Calculation Engine (`riskBatch`)
+* **What it does:** Scans your entire database of pending tasks and compares their estimated completion times against their hard deadlines and your available working hours. It assigns a risk level (`on_track`, `at_risk`, `critical`) so you know what is likely to fail before it actually fails.
+* **When it triggers:** Automatically runs nightly via Cloud Scheduler, or can be triggered manually by the user for an on-demand recalculation.
+
+### 3. 📈 Recommendations Agent
+* **What it does:** Analyzes your historical task completion data, focusing on your "momentum score" and estimation accuracy (how long you thought a task would take vs. how long it actually took). It generates highly personalized, actionable advice on how to improve your workflow.
+* **When it triggers:** Automatically runs nightly via Cloud Scheduler, delivering fresh insights to your dashboard every morning.
+
+### 4. 🛠️ Executor Agent
+* **What it does:** Acts on your behalf to resolve issues. If a task is critically at risk, the Executor Agent can draft an email to your client negotiating a deadline extension, or ping an accountability partner.
+* **When it triggers:** Triggered on-demand when you approve a high-risk action in the dashboard, or through explicit commands in the AI Chat.
+
+### 5. 💬 RAG Chat Agent
+* **What it does:** A conversational interface that acts as your personal chief of staff. It uses Retrieval-Augmented Generation (RAG) to search your tasks and database. You can ask it things like *"What's on my plate today?"* or *"Do I have enough time to finish the marketing brief before Friday?"*
+* **When it triggers:** Manually, whenever you interact with the Chat interface in the Niyro dashboard.
 
 ---
 
@@ -42,22 +74,12 @@ Niyro solves this by being a centralized intelligence layer that automatically p
 
 | Feature | Description |
 | :--- | :--- |
-| **Multi-Channel Sync** | Auto-extracts tasks from Gmail, Slack, and Telegram. |
-| **Conversational AI** | Chat interface powered by Google Gemini to query your workload. |
-| **Predictive Risk Engine** | Calculates deadline failure probabilities and sends push alerts. |
-| **Automated Briefings** | Daily AI-synthesized summaries delivered via Cloud Scheduler. |
-| **Custom Focus Mode** | A heavy, brutalist deep-work timer customizable to your preferred duration. |
-| **Autonomous Action** | Smart calendar management that protects your focus blocks. |
-
----
-
-## 🧗 Challenges Faced
-
-Building Niyro came with several intense technical challenges:
-1. **Unifying Asynchronous Data Streams:** Handling incoming webhooks from Telegram, Slack, and Gmail simultaneously required building a robust, idempotent ingestion pipeline so tasks wouldn't be duplicated or lost.
-2. **Deterministic LLM Output:** Relying on Gemini 3.5 to process natural language into actionable calendar commands meant we had to heavily engineer our prompts and use LangChain-style function calling to ensure it didn't hallucinate dates or times.
-3. **High-Performance RAG:** Keeping the vector search fast using Vertex AI and Firestore meant we had to structure our database carefully, ensuring that the AI only retrieved contextually relevant tasks for the specific user requesting them.
-4. **Implementing Neo-Brutalism:** Moving away from standard component libraries (like Material UI) to build a purely custom, high-contrast, brutalist interface using Tailwind CSS took significant design effort to ensure it remained accessible and readable.
+| **Multi-Channel Sync** | Auto-extracts tasks from Gmail, Slack, and Telegram directly into your dashboard. |
+| **Conversational AI** | Chat interface powered by Google Gemini to query your workload using RAG. |
+| **Predictive Risk Engine** | Calculates deadline failure probabilities and assigns visual risk tags. |
+| **Focus Mode** | A heavy, brutalist deep-work timer customizable to your preferred duration. |
+| **Automated Briefings** | Daily AI-synthesized summaries of your day's priorities, ready for you every morning. |
+| **Smart Recommendations** | AI-generated feedback on your work habits, estimation accuracy, and momentum. |
 
 ---
 
@@ -67,28 +89,20 @@ Niyro is structured as a modern monorepo, cleanly separating the client interfac
 
 ```text
 📦 Niyro
- ┣ 📂 frontend               # React, Vite, Tailwind CSS (Brutalist UI)
+ ┣ 📂 frontend               # React, TypeScript, Vite, Tailwind CSS (Brutalist UI)
  ┃ ┣ 📂 src/pages            # Dashboard, Focus Mode, AI Assistant, Settings
  ┃ ┣ 📂 src/components       # Reusable brutalist UI components
- ┃ ┗ 📂 src/hooks            # Firebase & State management hooks
+ ┃ ┗ 📂 src/hooks            # Firebase real-time state management hooks
  ┃
  ┗ 📂 backend                # Node.js, Express (API & AI Intelligence)
-   ┣ 📂 src/agents           # LangChain-style AI agents (Chat, Executor)
-   ┣ 📂 src/cron             # Cloud Scheduler endpoints (Daily Briefings)
+   ┣ 📂 src/agents           # LangChain-style AI agents (Chat, Executor, Ingest)
+   ┣ 📂 src/controllers      # Core API logic and Firebase mutations
+   ┣ 📂 src/cron             # Cloud Scheduler endpoints (Risk Batch, Polling)
    ┣ 📂 src/lib              # Google Cloud clients (Gemini, Vertex AI)
    ┗ 📂 src/routes           # REST API endpoints & Webhooks
 ```
 
-### 🔄 How Ingestion Works
-
-Niyro's ingestion pipeline silently pulls actionable tasks from your communication channels so you never have to manually enter a to-do item again.
-
-1. **Gmail Sync:** Niyro monitors your inbox for a specific "Niyro" label. When you label an email, a background chron job triggers the `gmailIngestionService`, fetches the email body, strips out HTML noise, and passes it to the AI.
-2. **AI Extraction:** The raw text is passed to the `ingestionAgent` powered by Gemini. The AI reads the context, determines if it's an actionable task, estimates the time required, and extracts deadlines.
-3. **Task Creation & Cleanup:** If a task is found, it is saved directly to your Firestore database. Niyro then reaches back to Gmail and removes the "Niyro" label so the email isn't ingested twice.
-4. **Slack & Telegram:** Similar webhook-based endpoints securely receive payloads from messaging platforms, routing the raw text through the same intelligent `ingestionAgent` pipeline.
-
-### 🗺️ Project Architecture & Flow Diagram
+### 🗺️ Internal Architecture & Flow Diagram
 
 Here is a visual breakdown of how Niyro's internal modules communicate:
 
@@ -110,7 +124,7 @@ flowchart TD
         subgraph Agents ["AI Agents"]
             IngestAgent("Ingestion Agent")
             ChatAgent("Chat / RAG Agent")
-            RiskAgent("Risk Calculation Engine")
+            RiskAgent("Risk Engine")
             RecAgent("Recommendations Agent")
         end
         
@@ -125,12 +139,12 @@ flowchart TD
     User -->|Interacts| FrontEnd
     FrontEnd -->|REST API| Router
     
-    Gmail -->|Polling/Sync| Router
-    Telegram -->|Webhooks| Router
-    Slack -->|Webhooks| Router
+    Gmail -->|Polling via Cron| Router
+    Telegram -->|Push Webhooks| Router
+    Slack -->|Push Webhooks| Router
     
-    Router -->|Pass raw text| IngestAgent
-    IngestAgent -->|Extracts tasks| LLM
+    Router -->|Raw Text| IngestAgent
+    IngestAgent -->|Extraction| LLM
     LLM -->|Structured JSON| IngestAgent
     IngestAgent -->|Saves Task| DB
     
@@ -138,51 +152,34 @@ flowchart TD
     ChatAgent -->|Fetches context| DB
     ChatAgent -->|Analyzes| LLM
     
-    Scheduler -->|Triggers Nightly| RiskAgent
-    Scheduler -->|Triggers Nightly| RecAgent
+    Scheduler -->|Triggers| RiskAgent
+    Scheduler -->|Triggers| RecAgent
     RiskAgent -->|Updates Probabilities| DB
     RecAgent -->|Analyzes stats| LLM
     LLM -->|Generates Insights| RecAgent
     RecAgent -->|Saves Insights| DB
     
-    DB -.->|Streams updates| FrontEnd
+    DB -.->|Real-time Snapshot| FrontEnd
 ```
-
-### Data Architecture (RAG Workflow)
-1. **Ingest:** Webhooks receive payloads from Telegram/Slack/Gmail.
-2. **Embed:** Text data is processed by **Google Vertex AI** to generate high-dimensional embeddings.
-3. **Store:** Embeddings and task metadata are persisted in **Firebase Firestore**.
-4. **Retrieve & Generate:** User queries hit the AI Assistant, which searches the vector space for relevant context and prompts **Google Gemini 3.5** for an intelligent response.
 
 ---
 
 ## 🛠️ Technologies Used
 
 ### Core Stack
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Framer Motion
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
 - **Backend:** Node.js, Express.js
 - **Database & Auth:** Firebase Firestore, Firebase Authentication
 
 ### Google Cloud Ecosystem
 | Technology | Role in Niyro |
 | :--- | :--- |
-| **Google Gemini API** | Core LLM powering reasoning, chat, and summarization. |
+| **Google Gemini API** | Core LLM powering reasoning, chat, extraction, and summarization. |
 | **Google Vertex AI** | Text embeddings for the vector search RAG pipeline. |
-| **Google Cloud Run** | Serverless hosting for the Express backend. |
+| **Google Cloud Run** | Serverless, autoscaling hosting for the Express backend. |
 | **Firebase Hosting** | High-speed global CDN for the React frontend application. |
 | **Google Workspace APIs** | OAuth integration for Gmail extraction and Calendar mutation. |
-| **Google Cloud Scheduler** | Reliable trigger execution for the automated Daily Briefings. |
-
----
-
-## 📊 Project Status & Metrics
-
-| Component | Status | Next Milestone |
-| :--- | :--- | :--- |
-| **Frontend UI/UX** | 🟢 Production Ready | Add advanced charts to Dashboard |
-| **Backend & AI Logic** | 🟢 Production Ready | Fine-tune Gemini prompts |
-| **Firebase Infrastructure** | 🟢 Production Ready | Optimize Firestore indexing |
-| **Slack Integration** | 🟡 In Development | Handle threaded context extraction |
+| **Google Cloud Scheduler** | Reliable trigger execution for automated Polling, Briefings, and Risk engines. |
 
 ---
 
