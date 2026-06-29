@@ -16,14 +16,6 @@
 
 ---
 
-## 📸 Project Showcase
-*(Upload your screenshot to `frontend/public/screenshot.png` or replace this link!)*
-<div align="center">
-  <img src="https://raw.githubusercontent.com/Aniketdhar810/Niyro/main/frontend/public/screenshot.png" alt="Niyro Dashboard" width="100%" onerror="this.style.display='none'"/>
-</div>
-
----
-
 ## 🚀 Problem It Solves
 
 In today's hyper-connected workflow, professionals are drowning in context switching. Deadlines and actionable tasks are scattered across **Gmail, Slack, and Telegram**, leading to overwhelming anxiety and a reactive—rather than proactive—work style. The constant noise makes deep, focused work almost impossible.
@@ -104,30 +96,30 @@ Here is a visual breakdown of how Niyro's internal modules communicate:
 flowchart TD
     %% Users and Interfaces
     User([User])
-    FrontEnd[Frontend (React / Vite)]
+    FrontEnd["Frontend (React / Vite)"]
     
     %% Third-party platforms
-    Gmail[Gmail API]
-    Telegram[Telegram Webhooks]
-    Slack[Slack Webhooks]
+    Gmail["Gmail API"]
+    Telegram["Telegram Webhooks"]
+    Slack["Slack Webhooks"]
     
     %% Backend Node.js
-    subgraph Backend [Node.js Express Backend]
-        Router[API Routes / Controllers]
+    subgraph Backend ["Node.js Express Backend"]
+        Router["API Routes / Controllers"]
         
-        subgraph Agents [AI Agents]
-            IngestAgent(Ingestion Agent)
-            ChatAgent(Chat / RAG Agent)
-            RiskAgent(Risk Calculation Engine)
-            RecAgent(Recommendations Agent)
+        subgraph Agents ["AI Agents"]
+            IngestAgent("Ingestion Agent")
+            ChatAgent("Chat / RAG Agent")
+            RiskAgent("Risk Calculation Engine")
+            RecAgent("Recommendations Agent")
         end
         
-        Scheduler[Cloud Scheduler / Cron]
+        Scheduler["Cloud Scheduler / Cron"]
     end
     
     %% Databases
-    DB[(Firestore Database)]
-    LLM{Google Gemini AI}
+    DB[("Firestore Database")]
+    LLM{"Google Gemini AI"}
     
     %% Relationships
     User -->|Interacts| FrontEnd
