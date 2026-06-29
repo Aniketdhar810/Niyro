@@ -65,7 +65,7 @@ Niyro is structured as a modern monorepo, cleanly separating the client interfac
 1. **Ingest:** Webhooks receive payloads from Telegram/Slack/Gmail.
 2. **Embed:** Text data is processed by **Google Vertex AI** to generate high-dimensional embeddings.
 3. **Store:** Embeddings and task metadata are persisted in **Firebase Firestore**.
-4. **Retrieve & Generate:** User queries hit the AI Assistant, which searches the vector space for relevant context and prompts **Google Gemini 2.5** for an intelligent response.
+4. **Retrieve & Generate:** User queries hit the AI Assistant, which searches the vector space for relevant context and prompts **Google Gemini 3.5** for an intelligent response.
 
 ---
 
