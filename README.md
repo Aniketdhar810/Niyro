@@ -175,17 +175,6 @@ flowchart TD
 
 ---
 
-## 📊 Project Status & Metrics
-
-| Component | Status | Next Milestone |
-| :--- | :--- | :--- |
-| **Frontend UI/UX** | 🟢 Production Ready | Add advanced charts to Dashboard |
-| **Backend & AI Logic** | 🟢 Production Ready | Fine-tune Gemini prompts |
-| **Firebase Infrastructure** | 🟢 Production Ready | Optimize Firestore indexing |
-| **Slack Integration** | 🟡 In Development | Handle threaded context extraction |
-
----
-
 <div align="center">
   <i>Built with ❤️ to end burnout.</i>
 </div>
