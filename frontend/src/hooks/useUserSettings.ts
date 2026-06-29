@@ -19,6 +19,9 @@ export interface UserSettings {
     end: string;
     timezone: string;
   };
+  focusPrefs?: {
+    durationMinutes?: number;
+  };
 }
 
 export const useUserSettings = () => {

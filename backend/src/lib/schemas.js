@@ -43,6 +43,9 @@ export const settingsUpdateSchema = z.object({
     intensity: z.enum(['low','normal','high']),
     channels: z.array(z.string()),
   }).partial().optional(),
+  focusPrefs: z.object({
+    durationMinutes: z.number().int().min(1).max(240).optional(),
+  }).partial().optional(),
 }).strict();
 
 // Ingestion webhook schemas

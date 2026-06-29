@@ -55,15 +55,13 @@ export const Landing: React.FC = () => {
             </div>
             <motion.h1 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
-              className="font-display-xl text-[56px] md:text-display-2xl uppercase text-on-surface mb-8 tracking-tighter leading-[0.85]"
+              className="font-display-xl text-[64px] md:text-[96px] lg:text-[110px] font-black uppercase text-on-surface mb-8 tracking-tighter leading-[0.85]"
             >
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: "spring" }} className="inline-block">GET</motion.span>{' '}
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring" }} className="inline-block">MORE</motion.span>{' '}
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: "spring" }} className="inline-block">DONE.</motion.span><br />
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, type: "spring" }} className="inline-block">STRESS</motion.span>{' '}
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, type: "spring" }} className="inline-block">LESS.</motion.span><br />
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, type: "spring" }} className="inline-block text-primary">LIVE</motion.span>{' '}
-              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, type: "spring" }} className="inline-block text-primary">BETTER.</motion.span>
+              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: "spring" }} className="inline-block">GET MORE</motion.span><br />
+              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring" }} className="inline-block">DONE.</motion.span><br />
+              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: "spring" }} className="inline-block">STRESS</motion.span><br />
+              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, type: "spring" }} className="inline-block">LESS.</motion.span><br />
+              <motion.span initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, type: "spring" }} className="inline-block text-primary">LIVE BETTER.</motion.span>
             </motion.h1>
             <p className="font-label-mono text-lg md:text-xl text-on-surface max-w-xl mb-12 uppercase leading-relaxed font-bold hero-spring" style={{ animationDelay: '0.5s' }}>
                 Your AI co-pilot that plans your day, manages tasks, and saves you from last-minute chaos.

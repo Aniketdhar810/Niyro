@@ -22,6 +22,7 @@ export const Settings: React.FC = () => {
   const [workHoursStart, setWorkHoursStart] = useState('09:00');
   const [workHoursEnd, setWorkHoursEnd] = useState('18:00');
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [focusDuration, setFocusDuration] = useState(45);
   const [isSavingHours, setIsSavingHours] = useState(false);
 
   useEffect(() => {
@@ -34,6 +35,9 @@ export const Settings: React.FC = () => {
       if (settings.notificationPrefs.riskAlerts !== undefined) setRiskAlerts(settings.notificationPrefs.riskAlerts);
       if (settings.notificationPrefs.dailyBriefing !== undefined) setDailyBriefing(settings.notificationPrefs.dailyBriefing);
       if (settings.notificationPrefs.autonomousActions !== undefined) setAutonomousActions(settings.notificationPrefs.autonomousActions);
+    }
+    if (settings?.focusPrefs) {
+      if (settings.focusPrefs.durationMinutes !== undefined) setFocusDuration(settings.focusPrefs.durationMinutes);
     }
   }, [settings]);
 
@@ -79,6 +83,9 @@ export const Settings: React.FC = () => {
           start: workHoursStart,
           end: workHoursEnd,
           timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+        },
+        focusPrefs: {
+          durationMinutes: focusDuration
         }
       });
       alert('Preferences saved successfully!');
@@ -348,6 +355,20 @@ export const Settings: React.FC = () => {
                     value={timezone}
                     onChange={e => setTimezone(e.target.value)}
                     placeholder="e.g. Asia/Kolkata"
+                    className="bg-surface-variant border-2 border-on-surface px-2 py-1 font-label-mono text-sm w-full outline-none focus:border-primary"
+                  />
+                </div>
+                
+                <div className="flex flex-col border-b-2 border-on-surface border-dotted pb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-label-mono text-label-mono-sm text-on-surface-variant uppercase">Focus Session Duration (mins)</span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="240"
+                    value={focusDuration}
+                    onChange={e => setFocusDuration(Number(e.target.value))}
                     className="bg-surface-variant border-2 border-on-surface px-2 py-1 font-label-mono text-sm w-full outline-none focus:border-primary mb-4"
                   />
                   <button 

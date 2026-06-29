@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { SideNav } from '../components/SideNav';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useUserSettings } from '../hooks/useUserSettings';
 
 export const Focus: React.FC = () => {
-  const { tasks, loading } = useDashboardData();
-  const [timeLeft, setTimeLeft] = useState(45 * 60); // 45 minutes
+  const { tasks, loading: tasksLoading } = useDashboardData();
+  const { settings, loading: settingsLoading } = useUserSettings();
+  
+  const durationMinutes = settings?.focusPrefs?.durationMinutes || 45;
+  const totalTime = durationMinutes * 60;
+  
+  const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isActive, setIsActive] = useState(true);
   const [showDistractions, setShowDistractions] = useState(false);
 
@@ -18,7 +24,15 @@ export const Focus: React.FC = () => {
     return () => clearInterval(interval);
   }, [isActive, timeLeft]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!settingsLoading) {
+      // Only set initial time if we just finished loading settings
+      // and we haven't started ticking down yet.
+      setTimeLeft(durationMinutes * 60);
+    }
+  }, [settingsLoading, durationMinutes]);
+
+  if (tasksLoading || settingsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface">
         <div className="w-16 h-16 border-[3px] border-on-surface border-t-primary rounded-full animate-spin"></div>
@@ -34,7 +48,7 @@ export const Focus: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const totalTime = 45 * 60;
+
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
   // Circumference of a circle with r=46 is 2 * Math.PI * 46 ~= 289
   const circumference = 289;
@@ -122,7 +136,7 @@ export const Focus: React.FC = () => {
           <button 
             onClick={() => {
               setIsActive(false);
-              setTimeLeft(45 * 60);
+              setTimeLeft(totalTime);
             }}
             className="rounded-full bg-surface text-on-surface font-label-mono text-label-mono font-bold uppercase tracking-widest px-10 py-4 border-[3px] border-on-surface shadow-[4px_4px_0px_#0A0A0A] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[2px_2px_0px_#0A0A0A] transition-all flex items-center gap-3 group focus:outline-none"
           >
