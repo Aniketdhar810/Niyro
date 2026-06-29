@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBThgg8duXCR4tjOWnKo8XOkdAjjYGOGzlbJDkDmv9OsFWukILTxOGj4FQai-oaTYe2ExYuL1tqukHWm1INHjBVBWk3OmmQZW1YaxAU2_FalIFNfu-kpjYK6WV3_6aqISqg76qAJy3KT8qwcTf1TJ0Ax_aFO1kwXi2HPNDh6rBy6F-yDv5uQUOqhfFup7VINRFSMiP-YSl9oL_KK6ak3ntRX-zX5XKKI4RWKOHfoRKpPJP-LX-uF6PHqUQxuakUGC8Qc9M" alt="Niyro - AI Productivity Assistant" width="100%" />
+  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBThgg8duXCR4tjOWnKo8XOkdAjjYGOGzlbJDkDmv9OsFWukILTxOGj4FQai-oaTYe2ExYuL1tqukHWm1INHjBVBWk3OmmQZW1YaxAU2_FalIFNfu-kpjYK6WV3_6aqISqg76qAJy3KT8qwcTf1TJ0Ax_aFO1kwXi2HPNDh6rBy6F-yDv5uQUOqhfFup7VINRFSMiP-YSl9oL_KK6ak3ntRX-zX5XKKI4RWKOHfoRKpPJP-LX-uF6PHqUQxuakUGC8Qc9M" alt="Niyro Logo" width="100%" />
   
   # Niyro
   **Get More Done. Stress Less. Live Better.**
@@ -7,13 +7,28 @@
   <p align="center">
     Your AI co-pilot that plans your day, manages tasks across all platforms, and saves you from last-minute chaos.
   </p>
+
+  ### 🔗 Important Links
+  **[Live Project](https://niyro-e3ddb.web.app)** | **[GitHub Repository](https://github.com/Aniketdhar810/Niyro)** | **[Presentation / Project Description](#)**
+
+  **Platform:** Web Application (Responsive Desktop & Mobile)
 </div>
 
 ---
 
-## 🚀 The Problem We Are Solving
+## 📸 Project Showcase
+*(Upload your screenshot to `frontend/public/screenshot.png` or replace this link!)*
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Aniketdhar810/Niyro/main/frontend/public/screenshot.png" alt="Niyro Dashboard" width="100%" onerror="this.style.display='none'"/>
+</div>
+
+---
+
+## 🚀 Problem It Solves
 
 In today's hyper-connected workflow, professionals are drowning in context switching. Deadlines and actionable tasks are scattered across **Gmail, Slack, and Telegram**, leading to overwhelming anxiety and a reactive—rather than proactive—work style. The constant noise makes deep, focused work almost impossible.
+
+Niyro solves this by being a centralized intelligence layer that automatically prioritizes what matters and actively blocks out distractions so you can execute without burning out.
 
 ## 💡 Our Solution
 
@@ -40,6 +55,16 @@ In today's hyper-connected workflow, professionals are drowning in context switc
 | **Automated Briefings** | Daily AI-synthesized summaries delivered via Cloud Scheduler. |
 | **Custom Focus Mode** | A heavy, brutalist deep-work timer customizable to your preferred duration. |
 | **Autonomous Action** | Smart calendar management that protects your focus blocks. |
+
+---
+
+## 🧗 Challenges Faced
+
+Building Niyro came with several intense technical challenges:
+1. **Unifying Asynchronous Data Streams:** Handling incoming webhooks from Telegram, Slack, and Gmail simultaneously required building a robust, idempotent ingestion pipeline so tasks wouldn't be duplicated or lost.
+2. **Deterministic LLM Output:** Relying on Gemini 3.5 to process natural language into actionable calendar commands meant we had to heavily engineer our prompts and use LangChain-style function calling to ensure it didn't hallucinate dates or times.
+3. **High-Performance RAG:** Keeping the vector search fast using Vertex AI and Firestore meant we had to structure our database carefully, ensuring that the AI only retrieved contextually relevant tasks for the specific user requesting them.
+4. **Implementing Neo-Brutalism:** Moving away from standard component libraries (like Material UI) to build a purely custom, high-contrast, brutalist interface using Tailwind CSS took significant design effort to ensure it remained accessible and readable.
 
 ---
 
