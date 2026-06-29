@@ -20,11 +20,6 @@ export const Auth: React.FC = () => {
     }
   };
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Implementation placeholder for email/password auth
-    console.log("Email sign in clicked");
-  };
 
   if (loading) return null; // or a loading spinner
 
@@ -57,51 +52,7 @@ export const Auth: React.FC = () => {
           <span className="font-label-mono text-label-mono font-bold">Continue with Google</span>
         </button>
         
-        {/* Divider */}
-        <div className="relative flex items-center py-5 mb-4">
-          <div className="flex-grow border-t border-[#0A0A0A]"></div>
-          <span className="flex-shrink-0 mx-4 text-on-surface-variant font-label-mono text-label-mono-sm uppercase">or</span>
-          <div className="flex-grow border-t border-[#0A0A0A]"></div>
-        </div>
-        
-        {/* Form */}
-        <form className="space-y-4" onSubmit={handleEmailSignIn}>
-          <div className="space-y-2">
-            <label className="font-label-mono text-label-mono-sm font-bold block" htmlFor="email">Email Address</label>
-            <input 
-              className="w-full bg-white border-border-width border-[#0A0A0A] rounded px-4 py-3 font-body-md text-body-md focus:outline-none focus:border-border-width-heavy focus:border-primary transition-colors" 
-              id="email" 
-              placeholder="hello@example.com" 
-              required 
-              type="email" 
-            />
-          </div>
-          <div className="space-y-2 mb-6">
-            <label className="font-label-mono text-label-mono-sm font-bold block" htmlFor="password">Password</label>
-            <input 
-              className="w-full bg-white border-border-width border-[#0A0A0A] rounded px-4 py-3 font-body-md text-body-md focus:outline-none focus:border-border-width-heavy focus:border-primary transition-colors" 
-              id="password" 
-              placeholder="••••••••" 
-              required 
-              type="password" 
-            />
-          </div>
-          
-          {/* Submit */}
-          <button 
-            type="submit"
-            className="w-full bg-[#0A0A0A] text-white rounded-full py-3 px-6 font-label-mono text-label-mono font-bold mt-6 mb-8 hover:bg-surface-variant hover:text-[#0A0A0A] border-border-width border-[#0A0A0A] transition-all shadow-[4px_4px_0px_#1c1b1b] active:shadow-[0px_0px_0px_#1c1b1b] active:translate-y-1 active:translate-x-1"
-          >
-            Sign In
-          </button>
-        </form>
-        
-        {/* Footer Link */}
-        <div className="text-center mt-6">
-          <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary hover:underline decoration-2 underline-offset-4 font-medium transition-colors" href="#">
-            Don't have an account? Create one
-          </a>
-        </div>
+
       </div>
     </div>
   );
