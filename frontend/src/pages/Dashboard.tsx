@@ -5,11 +5,14 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { SideNav } from '../components/SideNav';
 import { format, parseISO, isToday, isFuture, differenceInMinutes } from 'date-fns';
 import { api } from '../lib/apiClient';
+import { useRecommendations } from '../hooks/useRecommendations';
+import { RecommendationCard } from '../components/RecommendationCard';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userData, tasks, activities, approvals, loading } = useDashboardData();
+  const { recommendations, loading: recsLoading, refresh, refreshing, canRefresh, generatedAt } = useRecommendations();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Derived calculations
@@ -280,6 +283,39 @@ export const Dashboard: React.FC = () => {
                 ))
               )}
             </div>
+          </div>
+          
+          {/* Recommendations (For You) Section */}
+          <div className="lg:col-span-2 bg-surface-container-lowest border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] p-6 md:p-8 mt-gutter">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b-border-width border-on-surface">
+              <h2 className="font-headline-md text-headline-md font-bold uppercase">For You</h2>
+              <button
+                onClick={refresh}
+                disabled={!canRefresh || refreshing}
+                className="text-sm font-label-mono text-primary disabled:text-on-surface-variant hover:text-primary-variant transition-colors"
+              >
+                {refreshing ? 'Analyzing...' : canRefresh ? 'Refresh insights' : 'Updated recently'}
+              </button>
+            </div>
+            
+            {recsLoading ? (
+              <div className="text-sm font-label-mono text-on-surface-variant">Analyzing your patterns...</div>
+            ) : recommendations.length === 0 ? (
+              <div className="text-sm font-label-mono text-on-surface-variant">
+                Complete a few tasks to unlock personalized insights.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recommendations.map(rec => (
+                  <RecommendationCard key={rec.id} rec={rec} />
+                ))}
+                {generatedAt && (
+                  <p className="text-[10px] font-label-mono text-on-surface-variant text-right">
+                    Last analyzed {new Date(generatedAt).toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Context / Actions Panel */}

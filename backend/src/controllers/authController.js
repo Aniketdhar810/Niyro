@@ -56,8 +56,8 @@ export async function handleGoogleCallback(req, res) {
         { merge: true }
       );
     }
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/settings`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/settings?gmailConnected=true`);
   } catch (e) {
     console.error('OAuth callback error:', e);
     throw new GoogleOAuthError(e.message);

@@ -98,18 +98,76 @@ router.post('/telegram', async (req, res) => {
   }
 });
 
-// ── Gmail Pub/Sub push (optional — for now, users trigger manually) ────────
-router.post('/gmail', async (req, res) => {
-  res.sendStatus(200); // Always 200 to Pub/Sub
+// ── Chrome Extension: ingest a specific Gmail message by ID ────────
+// The extension sends just the message ID — backend fetches the full email
+router.post('/gmail/message', authMiddleware, async (req, res) => {
   try {
-    const body = req.body?.message;
-    if (!body) return;
-    // Gmail push sends base64-encoded data containing the historyId
-    // For MVP: trigger a manual poll from the frontend instead
-    // Full implementation: decode, look up user by email, call gmailClient.listMessages
-    logger.info('Gmail push received — manual poll recommended for MVP');
+    const uid = req.user.uid;
+    const { messageId } = req.body;
+    
+    if (!messageId) {
+      return res.status(400).json({ success: false, error: 'messageId is required' });
+    }
+    
+    // Use the existing service to fetch and ingest this specific message
+    const { processGmailMessage } = await import('../lib/gmailIngestionService.js');
+    const result = await processGmailMessage(uid, messageId);
+    
+    if (!result) {
+      return res.json({ 
+        success: false, 
+        error: 'Email does not appear to contain an actionable task' 
+      });
+    }
+    
+    res.json({ success: true, taskId: result.taskId });
   } catch (err) {
-    logger.error('Gmail webhook error', err);
+    logger.error('Gmail message ingest error', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Gmail Label Sync: manually triggered by the user ────────
+router.post('/gmail/sync', authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    
+    // Import dynamically to avoid circular dependencies if any
+    const { ensureNiyroLabel, getMessagesByLabel, removeLabelFromMessage } = await import('../lib/gmailClient.js');
+    const { processGmailMessage } = await import('../lib/gmailIngestionService.js');
+    
+    // 1. Ensure the "Niyro" label exists and get its ID
+    const labelId = await ensureNiyroLabel(uid);
+    
+    // 2. Fetch all messages that have this label
+    const messages = await getMessagesByLabel(uid, labelId);
+    
+    if (!messages || messages.length === 0) {
+      return res.json({ success: true, processed: 0, message: 'No labeled emails found' });
+    }
+    
+    let processedCount = 0;
+    
+    // 3. Process each message and remove the label
+    for (const msg of messages) {
+      try {
+        const result = await processGmailMessage(uid, msg.id);
+        if (result) {
+          // Task successfully created, remove the label
+          await removeLabelFromMessage(uid, msg.id, labelId);
+          processedCount++;
+        }
+      } catch (err) {
+        logger.error(`Error processing message ${msg.id} during sync`, err);
+        // We do not remove the label if there was a critical failure, 
+        // so it can be retried later.
+      }
+    }
+    
+    res.json({ success: true, processed: processedCount });
+  } catch (err) {
+    logger.error('Gmail sync error', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

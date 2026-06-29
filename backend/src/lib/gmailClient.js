@@ -74,3 +74,53 @@ export async function sendMessage(uid, rawMessage) {
   });
   return res.data;
 }
+
+/**
+ * Ensures the "Niyro" label exists for the user. Returns its ID.
+ */
+export async function ensureNiyroLabel(uid) {
+  const gmail = await getGmailClient(uid);
+  const res = await gmail.users.labels.list({ userId: 'me' });
+  const labels = res.data.labels || [];
+  let niyroLabel = labels.find(l => l.name === 'Niyro');
+  
+  if (!niyroLabel) {
+    const createRes = await gmail.users.labels.create({
+      userId: 'me',
+      requestBody: {
+        name: 'Niyro',
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
+      }
+    });
+    niyroLabel = createRes.data;
+  }
+  return niyroLabel.id;
+}
+
+/**
+ * Gets a list of message IDs that have the given label.
+ */
+export async function getMessagesByLabel(uid, labelId) {
+  const gmail = await getGmailClient(uid);
+  const res = await gmail.users.messages.list({
+    userId: 'me',
+    labelIds: [labelId],
+    maxResults: 50,
+  });
+  return res.data.messages || [];
+}
+
+/**
+ * Removes a specific label from a message.
+ */
+export async function removeLabelFromMessage(uid, messageId, labelId) {
+  const gmail = await getGmailClient(uid);
+  await gmail.users.messages.modify({
+    userId: 'me',
+    id: messageId,
+    requestBody: {
+      removeLabelIds: [labelId]
+    }
+  });
+}

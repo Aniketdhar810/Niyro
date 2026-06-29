@@ -21,6 +21,7 @@ import settingsRouter from './routes/settings.js';
 import chatRouter from './routes/chat.js';
 import activityFeedRouter from './routes/activityFeed.js';
 import cronRouter from './routes/cron.js';
+import recommendationsRouter from './routes/recommendations.js';
 
 // Validate env BEFORE initializing
 validateEnv();
@@ -49,6 +50,7 @@ app.use('/api/v1/approvals', authMiddleware, approvalsRouter);
 app.use('/api/v1/settings', authMiddleware, settingsRouter);
 app.use('/api/v1/chat', authMiddleware, chatRouter);
 app.use('/api/v1/activityFeed', authMiddleware, activityFeedRouter);
+app.use('/api/v1/recommendations', recommendationsRouter); // authMiddleware is already in router
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

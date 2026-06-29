@@ -38,10 +38,11 @@ Niyro solves this by being a centralized intelligence layer that automatically p
 
 ## 🌟 The User Experience (How it Flows)
 
-1. **Silent Ingestion:** You connect your Gmail, Slacki(developing stage), and Telegram accounts. Niyro's webhooks securely monitor incoming data and extract actionable tasks in the background without any manual data entry.
+1. **Silent Ingestion:** You connect your Gmail, Slack, and Telegram accounts. Niyro's webhooks securely monitor incoming data and extract actionable tasks in the background without any manual data entry.
 2. **The Morning Briefing:** At 8:00 AM, you receive a curated "Daily Briefing" straight to your Telegram, outlining your most critical tasks and warning you of any deadlines whose completion probability has dropped below 70%.
 3. **Conversational Planning:** Throughout the day, you open the Niyro dashboard. Instead of scrolling through endless lists, you simply ask the AI Assistant: *"What's at risk this week?"* or *"Draft a deferral for my math project."* The AI responds instantly using context-aware Retrieval-Augmented Generation (RAG).
 4. **Deep Work Execution:** You launch **Focus Mode**, setting your preferred session duration. The brutalist, distraction-free UI keeps you locked in, while Niyro can autonomously decline non-essential calendar invites during this block.
+5. **AI Recommendations:** Niyro tracks your task completion patterns and provides highly personalized productivity recommendations to optimize your workflow.
 
 ---
 
@@ -84,6 +85,75 @@ Niyro is structured as a modern monorepo, cleanly separating the client interfac
    ┣ 📂 src/cron             # Cloud Scheduler endpoints (Daily Briefings)
    ┣ 📂 src/lib              # Google Cloud clients (Gemini, Vertex AI)
    ┗ 📂 src/routes           # REST API endpoints & Webhooks
+```
+
+### 🔄 How Ingestion Works
+
+Niyro's ingestion pipeline silently pulls actionable tasks from your communication channels so you never have to manually enter a to-do item again.
+
+1. **Gmail Sync:** Niyro monitors your inbox for a specific "Niyro" label. When you label an email, a background chron job triggers the `gmailIngestionService`, fetches the email body, strips out HTML noise, and passes it to the AI.
+2. **AI Extraction:** The raw text is passed to the `ingestionAgent` powered by Gemini. The AI reads the context, determines if it's an actionable task, estimates the time required, and extracts deadlines.
+3. **Task Creation & Cleanup:** If a task is found, it is saved directly to your Firestore database. Niyro then reaches back to Gmail and removes the "Niyro" label so the email isn't ingested twice.
+4. **Slack & Telegram:** Similar webhook-based endpoints securely receive payloads from messaging platforms, routing the raw text through the same intelligent `ingestionAgent` pipeline.
+
+### 🗺️ Project Architecture & Flow Diagram
+
+Here is a visual breakdown of how Niyro's internal modules communicate:
+
+```mermaid
+flowchart TD
+    %% Users and Interfaces
+    User([User])
+    FrontEnd[Frontend (React / Vite)]
+    
+    %% Third-party platforms
+    Gmail[Gmail API]
+    Telegram[Telegram Webhooks]
+    Slack[Slack Webhooks]
+    
+    %% Backend Node.js
+    subgraph Backend [Node.js Express Backend]
+        Router[API Routes / Controllers]
+        
+        subgraph Agents [AI Agents]
+            IngestAgent(Ingestion Agent)
+            ChatAgent(Chat / RAG Agent)
+            RiskAgent(Risk Calculation Engine)
+            RecAgent(Recommendations Agent)
+        end
+        
+        Scheduler[Cloud Scheduler / Cron]
+    end
+    
+    %% Databases
+    DB[(Firestore Database)]
+    LLM{Google Gemini AI}
+    
+    %% Relationships
+    User -->|Interacts| FrontEnd
+    FrontEnd -->|REST API| Router
+    
+    Gmail -->|Polling/Sync| Router
+    Telegram -->|Webhooks| Router
+    Slack -->|Webhooks| Router
+    
+    Router -->|Pass raw text| IngestAgent
+    IngestAgent -->|Extracts tasks| LLM
+    LLM -->|Structured JSON| IngestAgent
+    IngestAgent -->|Saves Task| DB
+    
+    Router -->|User Queries| ChatAgent
+    ChatAgent -->|Fetches context| DB
+    ChatAgent -->|Analyzes| LLM
+    
+    Scheduler -->|Triggers Nightly| RiskAgent
+    Scheduler -->|Triggers Nightly| RecAgent
+    RiskAgent -->|Updates Probabilities| DB
+    RecAgent -->|Analyzes stats| LLM
+    LLM -->|Generates Insights| RecAgent
+    RecAgent -->|Saves Insights| DB
+    
+    DB -.->|Streams updates| FrontEnd
 ```
 
 ### Data Architecture (RAG Workflow)

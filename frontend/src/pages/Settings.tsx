@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { SideNav } from '../components/SideNav';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/apiClient';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../lib/firebase';
@@ -11,6 +11,8 @@ export const Settings: React.FC = () => {
   const { user, logout } = useAuth();
   const { settings, loading, toggleChannel } = useUserSettings();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [riskAlerts, setRiskAlerts] = useState(true);
   const [dailyBriefing, setDailyBriefing] = useState(true);
@@ -24,6 +26,13 @@ export const Settings: React.FC = () => {
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [focusDuration, setFocusDuration] = useState(45);
   const [isSavingHours, setIsSavingHours] = useState(false);
+
+  useEffect(() => {
+    const gmailJustConnected = searchParams.get('gmailConnected') === 'true';
+    if (gmailJustConnected) {
+      navigate('/settings', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     if (settings?.workHours) {
@@ -112,6 +121,30 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleGmailSync = async () => {
+    setIsSyncing(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/v1/ingest/gmail/sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Successfully synced ${data.processed} tasks from Gmail!`);
+      } else {
+        alert(`Sync failed: ${data.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Failed to sync with Gmail.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface">
@@ -159,12 +192,30 @@ export const Settings: React.FC = () => {
               <div>
                 <h3 className="font-headline-md text-[20px] text-on-surface mb-1 font-bold">Gmail</h3>
                 <p className="font-label-mono text-label-mono-sm text-on-surface-variant mb-6 uppercase">Syncs inbound tasks &amp; deadlines</p>
-                <button 
-                  onClick={handleGmailConnect}
-                  className={`font-label-mono text-label-mono px-6 py-2 w-full uppercase font-bold border-2 border-on-surface rounded-full shadow-[4px_4px_0px_#0A0A0A] active:shadow-[2px_2px_0px_#0A0A0A] active:translate-x-[2px] active:translate-y-[2px] transition-all ${isConnected('gmail') ? 'bg-surface text-on-surface' : 'bg-primary text-on-primary'}`}
-                >
-                  {isConnected('gmail') ? 'Disconnect' : 'Connect'}
-                </button>
+                <div className="flex gap-2 mb-4">
+                  <button 
+                    onClick={handleGmailConnect}
+                    className={`font-label-mono text-label-mono px-4 py-2 flex-1 uppercase font-bold border-2 border-on-surface rounded-full shadow-[4px_4px_0px_#0A0A0A] active:shadow-[2px_2px_0px_#0A0A0A] active:translate-x-[2px] active:translate-y-[2px] transition-all ${isConnected('gmail') ? 'bg-surface text-on-surface' : 'bg-primary text-on-primary'}`}
+                  >
+                    {isConnected('gmail') ? 'Disconnect' : 'Connect'}
+                  </button>
+                  {isConnected('gmail') && (
+                    <button 
+                      onClick={handleGmailSync}
+                      disabled={isSyncing}
+                      className="font-label-mono text-label-mono px-4 py-2 flex-1 uppercase font-bold border-2 border-on-surface rounded-full shadow-[4px_4px_0px_#0A0A0A] active:shadow-[2px_2px_0px_#0A0A0A] active:translate-x-[2px] active:translate-y-[2px] transition-all bg-secondary-fixed text-on-secondary-fixed disabled:opacity-50"
+                    >
+                      {isSyncing ? 'Syncing...' : 'Sync Now'}
+                    </button>
+                  )}
+                </div>
+                {isConnected('gmail') && (
+                  <div className="mt-2">
+                    <p className="text-xs text-on-surface-variant font-label-mono uppercase">
+                      \u2139\ufe0f Apply the <strong>Niyro</strong> label to any email in Gmail, then click Sync to turn them into tasks.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -52,6 +52,18 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 // Typed API Endpoints
 // ---------------------------------------------------------------------------
 
+export interface Recommendation {
+  id: string;
+  type: string;
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  body: string;
+  icon: string;
+  actionLabel: string | null;
+  actionRoute: string | null;
+  generatedAt: string;
+}
+
 export const api = {
   // Tasks
   createTask: (data: { title: string; description?: string; dueAt?: string; estimatedMinutes?: number }) => 
@@ -90,4 +102,10 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ message })
   }),
+
+  // Recommendations
+  getRecommendations: () => 
+    fetchApi<{ recommendations: Recommendation[]; generatedAt: string | null; nextRefreshAvailable: string }>('/api/v1/recommendations'),
+  refreshRecommendations: () =>
+    fetchApi<{ recommendations: Recommendation[] }>('/api/v1/recommendations/refresh', { method: 'POST' }),
 };

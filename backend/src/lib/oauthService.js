@@ -19,7 +19,7 @@ const oauth2Client = new google.auth.OAuth2(
 export function generateAuthUrl(state) {
   const scopes = [
     'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/gmail.send',
   ];
   return oauth2Client.generateAuthUrl({
