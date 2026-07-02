@@ -4,7 +4,7 @@
 
 export const validateEnv = () => {
   const required = [
-    'GOOGLE_CLOUD_PROJECT',        // For Gemini SDK (ADC)
+    'GEMINI_API_KEY',              // For AI Studio SDK
     'FIREBASE_ADMIN_CREDENTIALS',  // Firebase Admin SDK service account path
     'ENCRYPTION_KEY',              // AES-256-GCM key for token encryption
     'GOOGLE_CLIENT_ID',            // OAuth2 for Calendar/Gmail scopes

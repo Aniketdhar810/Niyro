@@ -17,6 +17,8 @@ export interface TaskStep {
   title: string;
   scheduledAt?: string;
   done?: boolean;
+  ifThenTrigger?: string;
+  isMicrotask?: boolean;
 }
 
 export interface TaskData {
@@ -27,6 +29,7 @@ export interface TaskData {
   dueAt?: string;
   source?: 'gmail' | 'telegram' | 'slack' | 'voice' | 'manual';
   steps?: TaskStep[];
+  estimatedMinutes?: number;
 }
 
 export interface ActivityData {

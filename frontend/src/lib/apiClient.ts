@@ -118,8 +118,11 @@ class ApiClient {
       body: JSON.stringify(data)
     });
   }
-  async completeTask(taskId: string) {
-    return this.request<{ success: boolean }>(`/tasks/${taskId}/complete`, { method: 'POST' });
+  async completeTask(taskId: string, actualMinutes?: number) {
+    return this.request<{ success: boolean }>(`/tasks/${taskId}/complete`, { 
+      method: 'POST',
+      body: actualMinutes !== undefined ? JSON.stringify({ actualMinutes }) : undefined
+    });
   }
   async updateTask(taskId: string, updates: Partial<Task>) {
     return this.request<{ success: boolean }>(`/tasks/${taskId}`, {

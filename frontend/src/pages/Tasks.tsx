@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SideNav } from '../components/SideNav';
 import { useDashboardData, type TaskData } from '../hooks/useDashboardData';
 import { 
@@ -10,6 +11,7 @@ type ViewMode = 'list' | 'board';
 
 export const Tasks: React.FC = () => {
   const { tasks, loading } = useDashboardData();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -164,6 +166,13 @@ export const Tasks: React.FC = () => {
           {/* Action Menu Dropdown */}
           {activeMenuId === task.id && (
             <div className="absolute right-0 top-10 bg-surface border-2 border-on-surface shadow-[4px_4px_0px_#0A0A0A] z-20 flex flex-col w-48 font-label-mono text-label-mono-sm uppercase font-bold">
+              <button 
+                onClick={() => navigate(`/focus?taskId=${task.id}`)}
+                className="text-left px-4 py-3 hover:bg-surface-variant border-b-2 border-on-surface flex items-center gap-2 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">timer</span>
+                Focus
+              </button>
               <button 
                 onClick={() => handleAgentTrigger(task.id, 'plan')}
                 className="text-left px-4 py-3 hover:bg-surface-variant border-b-2 border-on-surface flex items-center gap-2 transition-colors"
