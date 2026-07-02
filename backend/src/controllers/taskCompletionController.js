@@ -40,7 +40,12 @@ export async function completeTask(req, res) {
       updatedAt: now.toISOString(),
     });
 
-    await logActivity(uid, 'task_completed', { taskId, actualMinutes }, {
+    const activityDetails = { taskId };
+    if (actualMinutes !== undefined) {
+      activityDetails.actualMinutes = actualMinutes;
+    }
+
+    await logActivity(uid, 'task_completed', activityDetails, {
       agent: 'completion_handler',
       action: 'completeTask',
       relatedTaskId: taskId,
